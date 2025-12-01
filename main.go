@@ -11,22 +11,27 @@ import (
 	"strings"
 	"time"
 
+	"github.com/joho/godotenv"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
 // ------------------------------------------------------------------
 // Environment variables
 // ------------------------------------------------------------------
-var (
-	BaseURL   = os.Getenv("SEARCH_BASE_URL")
-	QLibID    = os.Getenv("QLIBID_INDEX")
-	QID       = os.Getenv("QID_INDEX")
-	AuthToken = os.Getenv("INDEX_AUTH_TOKEN")
-	NodeURL   = os.Getenv("IMAGE_BASE_URL")
+var BaseURL, QLibID, QID, AuthToken, NodeURL, AuthTokenObj, BaseURLVid string
 
+func loadEnv() {
+	if err := godotenv.Load(); err != nil {
+		log.Printf(".env not found or could not be loaded: %v (will rely on existing environment)", err)
+	}
+	BaseURL = os.Getenv("SEARCH_BASE_URL")
+	QLibID = os.Getenv("QLIBID_INDEX")
+	QID = os.Getenv("QID_INDEX")
+	AuthToken = os.Getenv("INDEX_AUTH_TOKEN")
+	NodeURL = os.Getenv("IMAGE_BASE_URL")
 	AuthTokenObj = os.Getenv("QAUTH_TOKEN")
-	BaseURLVid   = os.Getenv("VID_BASE_URL")
-)
+	BaseURLVid = os.Getenv("VID_BASE_URL")
+}
 
 // ------------------------------------------------------------------
 // Tool request / response payloads
@@ -47,7 +52,7 @@ type SearchClipsArgs struct {
 }
 
 type clipItem struct {
-	URL       string `json:"url"`
+	VideoURL  string `json:"url"`
 	ImageURL  string `json:"image_url"`
 	Start     string `json:"start"`
 	End       string `json:"end"`
@@ -57,6 +62,13 @@ type clipItem struct {
 
 type clipResponse struct {
 	Contents []clipItem `json:"contents"`
+}
+
+// searchClipsResult is the structured object returned to the LLM per MCP call.
+// It includes a per-call Description plus the list of clip Contents.
+type searchClipsResult struct {
+	Description string     `json:"description"`
+	Contents    []clipItem `json:"contents"`
 }
 
 // ------------------------------------------------------------------
@@ -289,15 +301,16 @@ func doGET(ctx context.Context, urlStr string) (*clipResponse, *http.Response, e
 // ------------------------------------------------------------------
 
 func main() {
+	loadEnv()
 	server := mcp.NewServer(&mcp.Implementation{
 		Name:    "eluvio-search-mcp",
-		Version: "0.9.0",
+		Version: "1.0.0",
 	}, nil)
 
 	// Tool: search_clips (with NodeURL-based thumbnails)
 	mcp.AddTool[SearchClipsArgs](server, &mcp.Tool{
 		Name:        "search_clips",
-		Description: "Search the Eluvio Search API and return clip results with thumbnails",
+		Description: "Searches the Eluvio Search API and returns video clip results with thumbnail images. The tool provides a thumbnail_url field for each clip. The assistant should always display these thumbnails inline as images in the chat and should not output raw URLs unless necessary. Thumbnails should appear first, followed by the clip’s link or details.",
 	}, func(ctx context.Context, req *mcp.CallToolRequest, args SearchClipsArgs) (*mcp.CallToolResult, any, error) {
 		searchURL, err := buildSearchURL(args)
 		log.Println("search URL: %s", searchURL)
@@ -337,8 +350,8 @@ func main() {
 			}
 
 			// Build clip URL and persist it into the result
-			video := buildVideoURL(c.URL, AuthTokenObj, startStr, endStr)
-			result.Contents[i].URL = video
+			video := buildVideoURL(c.VideoURL, AuthTokenObj, startStr, endStr)
+			result.Contents[i].VideoURL = video
 
 			// Build thumbnail URL (if requested) and persist in the result
 			var thumb string
@@ -358,12 +371,17 @@ func main() {
 			sb.WriteString("\n")
 		}
 
-		prettyJSON, _ := json.MarshalIndent(result, "", "  ")
+		combined := searchClipsResult{
+			Description: "Searches the Eluvio Search API and returns video clip results with thumbnail images. The tool provides a thumbnail_url field for each clip. The assistant should always display these thumbnails inline as images in the chat and should not output raw URLs unless necessary. A thumbnail image URL embedded inside a clickable link, formatted exactly like this: [![Title or description](THUMBNAIL_URL)](VIDEO_URL) ",
+			Contents:    result.Contents,
+		}
+
+		prettyJSON, _ := json.MarshalIndent(combined, "", "  ")
 		content := []mcp.Content{
 			&mcp.TextContent{Text: sb.String()},
 			&mcp.TextContent{Text: "Raw JSON:\n" + string(prettyJSON)},
 		}
-		return &mcp.CallToolResult{Content: content}, result, nil
+		return &mcp.CallToolResult{Content: content}, combined, nil
 	})
 
 	sseHandler := mcp.NewSSEHandler(func(r *http.Request) *mcp.Server { return server }, nil)
