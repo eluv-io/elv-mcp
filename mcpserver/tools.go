@@ -8,9 +8,10 @@ import (
 	"log"
 	"strings"
 
-	"elv-mcp-experiment/elv-mcp-experiment/auth"
-	"elv-mcp-experiment/elv-mcp-experiment/builder"
-	"elv-mcp-experiment/elv-mcp-experiment/types"
+	"github.com/qluvio/elv-mcp-experiment/auth"
+	"github.com/qluvio/elv-mcp-experiment/builder"
+	"github.com/qluvio/elv-mcp-experiment/types"
+
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
@@ -34,7 +35,7 @@ func SearchClips(ctx context.Context, req *mcp.CallToolRequest, args types.Searc
 	log.Printf("search URL: %s", searchURL)
 
 	result, httpResp, err := searchClips(ctx, searchURL, "")
-	log.Printf("search result: %s", result)
+	log.Printf("search result: %v", result)
 
 	var httpStatus string
 	var statusCode int
@@ -85,10 +86,10 @@ func SearchClips(ctx context.Context, req *mcp.CallToolRequest, args types.Searc
 		if err != nil {
 			return toolError("Failed to fetch editor token", err)
 		}
-		cfg.ESToken = eTok
+		c.ESToken = eTok
 
 		// Build the clip URL now that we guarantee `editorToken` is valid
-		video := builder.BuildVideoURL(c.VideoURL, cfg.ESToken, startStr, endStr, cfg)
+		video := builder.BuildVideoURL(c.VideoURL, c.ESToken, startStr, endStr, cfg)
 		result.Contents[i].VideoURL = video
 
 		var thumb string

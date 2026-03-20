@@ -62,6 +62,8 @@ github.com/decred/dcrd/dcrec/secp256k1/v4 v4.0.1 h1:YLtO71vCjJRCBcrPMtQ9nqBsqpA1
 github.com/decred/dcrd/dcrec/secp256k1/v4 v4.0.1/go.mod h1:hyedUtir6IdtD/7lIxGeCxkaw7y45JueMRL4DIyJDKs=
 github.com/eluv-io/apexlog-go v1.9.1-elv4 h1:lJE8+Y+GtUhw1BBAlFePuVZg78jCKgeFsdqBtrjbtJc=
 github.com/eluv-io/apexlog-go v1.9.1-elv4/go.mod h1:pZhIuRbWTsOm5WEOxke9B2dczjQuaEGeJXEYd5lCxkk=
+github.com/eluv-io/cbor/v2 v2.8.1-0.20250506081522-e7b11bfa1dad h1:30fHO0KQJrcDV0uDZ5nWUFwen7FZcBIa13x6S5MsWi4=
+github.com/eluv-io/cbor/v2 v2.8.1-0.20250506081522-e7b11bfa1dad/go.mod h1:koW2XJwOj9cAvE4+oLHCQtCKLfPor83Jbyyy8OwOAzE=
 github.com/eluv-io/common-go v1.1.18 h1:UuFfeyhvJeYSuNE2s0/Tb3/fBoNVkc94zxIYr6RvTLc=
 github.com/eluv-io/common-go v1.1.18/go.mod h1:ErfnH6ZQtrvwm6msZVFYTN48CbGQogrEM65m3/RjJVA=
 github.com/eluv-io/errors-go v1.0.4 h1:IlSHojkeNgjT4qBO1PpiS8R0XlyvrctiDCBszw/OrrA=
@@ -89,8 +91,6 @@ github.com/fsnotify/fsnotify v1.4.7/go.mod h1:jwhsz4b93w/PPRr/qN1Yymfu8t87LnFCMo
 github.com/fsnotify/fsnotify v1.4.9/go.mod h1:znqG4EE+3YCdAaPaxE2ZRY/06pZUdp0tY4IgpuI1SZQ=
 github.com/fsnotify/fsnotify v1.6.0 h1:n+5WquG0fcWoWp6xPWfHdbskMCQaFnG6PfBrh1Ky4HY=
 github.com/fsnotify/fsnotify v1.6.0/go.mod h1:sl3t1tCWJFWoRz9R8WJCbQihKKwmorjAbSClcnxKAGw=
-github.com/fxamacker/cbor/v2 v2.8.0 h1:fFtUGXUzXPHTIUdne5+zzMPTfffl3RD5qYnkY40vtxU=
-github.com/fxamacker/cbor/v2 v2.8.0/go.mod h1:vM4b+DJCtHn+zz7h3FFp/hDAI9WNWCsZj23V5ytsSxQ=
 github.com/getsentry/sentry-go v0.27.0 h1:Pv98CIbtB3LkMWmXi4Joa5OOcwbmnX88sF5qbK3r3Ps=
 github.com/getsentry/sentry-go v0.27.0/go.mod h1:lc76E2QywIyW8WuBnwl8Lc4bkmQH4+w1gwTf25trprY=
 github.com/ghodss/yaml v1.0.0 h1:wQHKEahhL6wmXdzwWG11gIVCkOv05bNOh+Rxn0yngAk=

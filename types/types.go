@@ -24,6 +24,7 @@ type ClipItem struct {
 	End       string `json:"end"`
 	StartTime int64  `json:"start_time"`
 	EndTime   int64  `json:"end_time"`
+	ESToken   string `json:"esat"`
 }
 
 type ClipResponse struct {

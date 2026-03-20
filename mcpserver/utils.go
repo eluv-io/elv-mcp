@@ -10,8 +10,9 @@ import (
 	"strings"
 	"time"
 
-	"elv-mcp-experiment/elv-mcp-experiment/types"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
+
+	"github.com/qluvio/elv-mcp-experiment/types"
 )
 
 // re-use one HTTP client (best practice)
