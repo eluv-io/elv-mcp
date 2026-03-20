@@ -1,4 +1,4 @@
-module qluvio/elv-mcp-experiment
+module github.com/qluvio/elv-mcp-experiment
 
 go 1.25.0
 
@@ -9,7 +9,6 @@ require (
 	github.com/ethereum/go-ethereum v1.17.1
 	github.com/joho/godotenv v1.5.1
 	github.com/modelcontextprotocol/go-sdk v1.4.1
-	github.com/qluvio/elv-mcp-experiment v0.0.0-20260320194554-b7453bee6895
 )
 
 require (
