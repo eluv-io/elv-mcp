@@ -13,7 +13,6 @@ import (
 	"strings"
 	"time"
 
-	"elv-mcp-experiment/elv-mcp-experiment/types"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
@@ -25,6 +24,8 @@ import (
 	"github.com/eluv-io/common-go/format/id"
 	types2 "github.com/eluv-io/common-go/format/types"
 	"github.com/eluv-io/utc-go"
+
+	"github.com/qluvio/elv-mcp-experiment/types"
 )
 
 func generateStateChannel() string {

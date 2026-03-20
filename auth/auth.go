@@ -3,10 +3,10 @@ package auth
 import (
 	"time"
 
-	"elv-mcp-experiment/elv-mcp-experiment/types"
-
 	"github.com/eluv-io/common-go/format/eat"
 	"github.com/eluv-io/errors-go"
+
+	"github.com/qluvio/elv-mcp-experiment/types"
 )
 
 func FetchStateChannel(token string) (string, error) {

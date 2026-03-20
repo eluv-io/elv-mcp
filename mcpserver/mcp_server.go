@@ -4,8 +4,8 @@ import (
 	"context"
 	"net/http"
 
-	"elv-mcp-experiment/elv-mcp-experiment/types"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
+	"github.com/qluvio/elv-mcp-experiment/types"
 )
 
 // NewServer wires up the MCP server and tools with the provided config.

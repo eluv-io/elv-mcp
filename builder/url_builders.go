@@ -5,7 +5,7 @@ import (
 	"net/url"
 	"strings"
 
-	"elv-mcp-experiment/elv-mcp-experiment/types"
+	"github.com/qluvio/elv-mcp-experiment/types"
 )
 
 // BuildNodeThumbURL builds: {nodeURL}/q/{imageURL}{sep}authorization={token}

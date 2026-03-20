@@ -4,9 +4,9 @@ import (
 	"log"
 	"net/http"
 
-	"elv-mcp-experiment/elv-mcp-experiment/auth"
-	"elv-mcp-experiment/elv-mcp-experiment/mcpserver"
-	"elv-mcp-experiment/elv-mcp-experiment/types"
+	"github.com/qluvio/elv-mcp-experiment/auth"
+	"github.com/qluvio/elv-mcp-experiment/mcpserver"
+	"github.com/qluvio/elv-mcp-experiment/types"
 )
 
 func main() {
