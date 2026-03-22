@@ -6,16 +6,18 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"strings"
 	"time"
 
+	elog "github.com/eluv-io/log-go"
 	"github.com/modelcontextprotocol/go-sdk/auth"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 
-	"github.com/qluvio/elv-mcp-experiment/types"
+	"github.com/qluvio/elv-mcp/types"
 )
+
+var log = elog.Get("/mcpserver")
 
 // re-use one HTTP client (best practice)
 var httpClient = &http.Client{
@@ -60,6 +62,9 @@ func searchClips(ctx context.Context, urlStr string, authToken string) (*types.C
 		return &types.ClipResponse{}, resp, nil
 	}
 
+	// Log the raw API response so we can inspect the actual structure
+	log.Debug("raw search API response", "body", string(body))
+
 	var out types.ClipResponse
 	if err := json.Unmarshal(body, &out); err != nil {
 		return nil, resp, fmt.Errorf("decode error: %w, body=%s", err, bodyStr)
@@ -72,9 +77,9 @@ func searchClips(ctx context.Context, urlStr string, authToken string) (*types.C
 // err can be nil if you only want to log a message.
 func toolError(userMessage string, err error) (*mcp.CallToolResult, any, error) {
 	if err != nil {
-		log.Printf("[tool error] %s: %v", userMessage, err)
+		log.Error("tool error", "message", userMessage, "error", err)
 	} else {
-		log.Printf("[tool error] %s", userMessage)
+		log.Error("tool error", "message", userMessage)
 	}
 
 	// For users, keep it reasonably high-level while still informative.
@@ -96,7 +101,7 @@ func recoverMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		defer func() {
 			if rec := recover(); rec != nil {
-				log.Printf("panic in HTTP handler: %v", rec)
+				log.Error("panic in HTTP handler", "panic", rec)
 				http.Error(w, "internal server error", http.StatusInternalServerError)
 			}
 		}()
@@ -104,10 +109,17 @@ func recoverMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-// loggingMiddleware logs basic request info for debugging.
+// loggingMiddleware logs each incoming request at INFO level, including the
+// authorization token when present.
 func loggingMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		log.Printf("HTTP %s %s from %s", r.Method, r.URL.Path, r.RemoteAddr)
+		authHeader := r.Header.Get("Authorization")
+		log.Info("http request",
+			"method", r.Method,
+			"path", r.URL.Path,
+			"remote", r.RemoteAddr,
+			"authorization", authHeader,
+		)
 		next.ServeHTTP(w, r)
 	})
 }
@@ -146,7 +158,7 @@ func selectiveAuthMiddleware(verifier auth.TokenVerifier, opts *auth.RequireBear
 			// Allow initialize, notifications/initialized, and refresh_clips without auth
 			if msg.Method == "initialize" || msg.Method == "notifications/initialized" ||
 				(msg.Method == "tools/call" && msg.Params.Name == "refresh_clips") {
-				log.Printf("Allowing unauthenticated %s request", msg.Method)
+				log.Debug("allowing unauthenticated request", "method", msg.Method)
 				next.ServeHTTP(w, r)
 				return
 			}

@@ -9,7 +9,7 @@ import (
 	"github.com/modelcontextprotocol/go-sdk/auth"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"github.com/modelcontextprotocol/go-sdk/oauthex"
-	"github.com/qluvio/elv-mcp-experiment/types"
+	"github.com/qluvio/elv-mcp/types"
 )
 
 // NewServer wires up the MCP server and tools with the provided config.

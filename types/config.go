@@ -5,11 +5,11 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"fmt"
-	"log"
 	"os"
 	"strings"
 	"sync"
 
+	elog "github.com/eluv-io/log-go"
 	"github.com/ethereum/go-ethereum/crypto"
 	"gopkg.in/yaml.v2"
 
@@ -19,9 +19,38 @@ import (
 
 // yamlConfig mirrors the config.yaml structure.
 type yamlConfig struct {
-	Server yamlServer `yaml:"server"`
-	Fabric yamlFabric `yaml:"fabric"`
-	Dev    yamlDev    `yaml:"dev"`
+	Log    *yamlLogConfig `yaml:"log"`
+	Server yamlServer     `yaml:"server"`
+	Fabric yamlFabric     `yaml:"fabric"`
+	Dev    yamlDev        `yaml:"dev"`
+}
+
+// yamlLogConfig maps the log section with proper yaml tags.
+// The elog.Config struct uses json tags which yaml.v2 doesn't read,
+// so we mirror it here with yaml tags and convert.
+type yamlLogConfig struct {
+	Level     string                    `yaml:"level"`
+	Formatter string                    `yaml:"formatter"`
+	File      *elog.LumberjackConfig    `yaml:"file"`
+	Named     map[string]*yamlLogConfig `yaml:"named"`
+}
+
+func (y *yamlLogConfig) toLogConfig() *elog.Config {
+	if y == nil {
+		return nil
+	}
+	c := &elog.Config{
+		Level:   y.Level,
+		Handler: y.Formatter,
+		File:    y.File,
+	}
+	if len(y.Named) > 0 {
+		c.Named = make(map[string]*elog.Config, len(y.Named))
+		for k, v := range y.Named {
+			c.Named[k] = v.toLogConfig()
+		}
+	}
+	return c
 }
 
 type yamlServer struct {
@@ -115,6 +144,11 @@ func LoadConfig() (*Config, error) {
 		ResourceURL:  resourceURL,
 	}
 
+	// Configure logging
+	if logCfg := yc.Log.toLogConfig(); logCfg != nil {
+		elog.SetDefault(logCfg)
+	}
+
 	if cfg.QLibIndexID == "" || cfg.QIndexID == "" || cfg.SearchIdxUrl == "" {
 		return cfg, errors.E("config", errors.K.Invalid, "reason", "missing required fields in config.yaml")
 	}
@@ -132,11 +166,7 @@ func BoolOrDefault(p *bool, def bool) bool {
 
 func decode(pemEncoded string) *ecdsa.PrivateKey {
 	block, _ := pem.Decode([]byte(pemEncoded))
-	log.Println(block)
 	x509Encoded := block.Bytes
-	log.Println(x509Encoded)
 	privateKey, _ := x509.ParseECPrivateKey(x509Encoded)
-	log.Println(privateKey)
-
 	return privateKey
 }

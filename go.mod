@@ -1,12 +1,14 @@
-module github.com/qluvio/elv-mcp-experiment
+module github.com/qluvio/elv-mcp
 
 go 1.25.0
 
 require (
 	github.com/eluv-io/common-go v1.1.18
 	github.com/eluv-io/errors-go v1.0.4
+	github.com/eluv-io/log-go v1.0.8
 	github.com/eluv-io/utc-go v1.0.1
 	github.com/ethereum/go-ethereum v1.17.1
+	github.com/golang-jwt/jwt/v5 v5.3.1
 	github.com/modelcontextprotocol/go-sdk v1.4.1
 	gopkg.in/yaml.v2 v2.4.0
 )
@@ -26,7 +28,6 @@ require (
 	github.com/deckarep/golang-set/v2 v2.6.0 // indirect
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.0.1 // indirect
 	github.com/eluv-io/apexlog-go v1.9.1-elv4 // indirect
-	github.com/eluv-io/log-go v1.0.8 // indirect
 	github.com/eluv-io/stack v1.8.2 // indirect
 	github.com/ethereum/c-kzg-4844/v2 v2.1.6 // indirect
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
@@ -35,7 +36,6 @@ require (
 	github.com/go-logr/logr v1.4.3 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/go-ole/go-ole v1.3.0 // indirect
-	github.com/golang-jwt/jwt/v5 v5.3.1 // indirect
 	github.com/google/jsonschema-go v0.4.2 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/gorilla/websocket v1.4.2 // indirect

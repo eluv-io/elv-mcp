@@ -2,22 +2,45 @@ package mcpserver
 
 import (
 	"context"
-	"log"
+	"fmt"
 	"net/http"
 	"time"
 
-	"github.com/modelcontextprotocol/go-sdk/auth"
+	"github.com/golang-jwt/jwt/v5"
+	mcpauth "github.com/modelcontextprotocol/go-sdk/auth"
 
-	"github.com/qluvio/elv-mcp-experiment/types"
+	elvauth "github.com/qluvio/elv-mcp/auth"
+	"github.com/qluvio/elv-mcp/types"
 )
 
-// NewTokenVerifier returns an auth.TokenVerifier that logs the token and
-// accepts it unconditionally. Replace with real JWT/JWKS validation later.
-func NewTokenVerifier(cfg *types.Config) auth.TokenVerifier {
-	return func(ctx context.Context, token string, req *http.Request) (*auth.TokenInfo, error) {
-		log.Printf("[oauth] received bearer token: %s", token)
-		return &auth.TokenInfo{
+// NewTokenVerifier returns an mcpauth.TokenVerifier that validates incoming
+// bearer tokens as JWTs signed by the configured OAuth issuer. The issuer's
+// JWKS is fetched and cached automatically.
+func NewTokenVerifier(cfg *types.Config) mcpauth.TokenVerifier {
+	verifier := elvauth.NewJWKSVerifier(cfg.OAuthIssuer)
+
+	return func(ctx context.Context, tokenStr string, req *http.Request) (*mcpauth.TokenInfo, error) {
+		token, err := verifier.VerifyJWT(tokenStr)
+		if err != nil {
+			log.Warn("JWT verification failed", "error", err)
+			return nil, fmt.Errorf("unauthorized: %w", err)
+		}
+
+		info := &mcpauth.TokenInfo{
 			Expiration: time.Now().Add(time.Hour),
-		}, nil
+		}
+
+		if claims, ok := token.Claims.(jwt.MapClaims); ok {
+			if exp, err := claims.GetExpirationTime(); err == nil && exp != nil {
+				info.Expiration = exp.Time
+			}
+			if sub, err := claims.GetSubject(); err == nil {
+				info.UserID = sub
+			}
+		}
+
+		log.Info("authenticated request", "user_id", info.UserID)
+
+		return info, nil
 	}
 }

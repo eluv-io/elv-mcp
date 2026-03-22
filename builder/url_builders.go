@@ -5,40 +5,26 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/qluvio/elv-mcp-experiment/types"
+	"github.com/qluvio/elv-mcp/types"
 )
 
-// BuildNodeThumbURL builds: {nodeURL}/q/{imageURL}{sep}authorization={token}
-// - imageURL is used AS-IS (no rewriting, no escaping, no leading slash added)
-// - sep is "&" if imageURL already has '?', otherwise "?"
-// If imageURL already starts with "q/" or "/q/", we do NOT add another "/q/".
+// BuildNodeThumbURL builds: {baseURL}/t/{token}{imageURL}
+// imageURL is expected to start with /q/ as returned by the search API.
 func BuildNodeThumbURL(imageURL, token string, cfg *types.Config) string {
-	node_base_url := cfg.ImgBaseUrl
 	if imageURL == "" {
 		return ""
 	}
 
-	// Ensure we only add one /q/
-	base := strings.TrimRight(node_base_url, "/")
-
-	// Ensure only one /q/
-	var final string
-	if strings.HasPrefix(imageURL, "q/") || strings.HasPrefix(imageURL, "/q/") {
-		final = base + "/" + strings.TrimLeft(imageURL, "/")
-	} else {
-		final = base + "/q/" + strings.TrimLeft(imageURL, "/")
+	base := strings.TrimRight(cfg.ImgBaseUrl, "/")
+	path := imageURL
+	if !strings.HasPrefix(path, "/") {
+		path = "/" + path
 	}
 
-	// If auth is empty or already present, don't append again
-	if token == "" || strings.Contains(imageURL, "authorization=") || strings.Contains(final, "authorization=") {
-		return final
+	if token == "" {
+		return base + path
 	}
-
-	sep := "?"
-	if strings.Contains(imageURL, "?") {
-		sep = "&"
-	}
-	return final + sep + "authorization=" + url.QueryEscape(token)
+	return base + "/t/" + token + path
 }
 
 // BuildSearchURL constructs the search Index API URL using config and args.
@@ -73,6 +59,9 @@ func BuildSearchURL(cfg *types.Config, args types.SearchClipsArgs, token string)
 	if len(args.DisplayFields) > 0 {
 		q.Set("display_fields", strings.Join(args.DisplayFields, ","))
 	}
+
+	// Always request metadata via select
+	q.Set("select", "/public/asset_metadata/display_title,/public/asset_metadata/info/release_date,/public/asset_metadata/ip_title_id")
 
 	if args.Start > 0 {
 		q.Set("start", fmt.Sprint(args.Start))
