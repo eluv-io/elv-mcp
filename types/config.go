@@ -35,6 +35,10 @@ type Config struct {
 	QlibTest     types.QLibID
 	QIDTest      types.QID
 	PkStrTest    *ecdsa.PrivateKey
+
+	// OAuth configuration
+	OAuthIssuer string // Ory issuer URL (e.g. https://eloquent-carson-yt726m2tf6.projects.oryapis.com)
+	ResourceURL string // This server's public URL (for protected resource metadata)
 }
 
 // LoadConfig returns a POINTER (*Config) so we share the same instance
@@ -58,6 +62,15 @@ func LoadConfig() (*Config, error) {
 	qidIndexID := os.Getenv("QID_INDEX")
 
 	// 2. Return Pointer (&Config)
+	oauthIssuer := os.Getenv("OAUTH_ISSUER")
+	if oauthIssuer == "" {
+		oauthIssuer = "https://eloquent-carson-yt726m2tf6.projects.oryapis.com"
+	}
+	resourceURL := os.Getenv("RESOURCE_URL")
+	if resourceURL == "" {
+		resourceURL = "https://localhost:8080"
+	}
+
 	cfg := &Config{
 		QlibTest:     types.QLibID(qlibIndexID),
 		QIDTest:      types.QID(qidIndexID),
@@ -70,6 +83,8 @@ func LoadConfig() (*Config, error) {
 		PkStr:        os.Getenv("PRIVATE_KEY"),
 		PkStrTest:    privateKey,
 		QSpaceID:     os.Getenv("QSPACE_ID"),
+		OAuthIssuer: oauthIssuer,
+		ResourceURL: resourceURL,
 	}
 
 	if cfg.QLibIndexID == "" || cfg.QIndexID == "" || cfg.SearchIdxUrl == "" {

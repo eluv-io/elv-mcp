@@ -23,7 +23,7 @@ func main() {
 	log.Println("Token returned:", stateToken)
 
 	server := mcpserver.NewServer(cfg)
-	mux := mcpserver.NewHTTPMux(server)
+	mux := mcpserver.NewHTTPMux(server, cfg)
 
 	addr := ":8080"
 	log.Printf("MCP server listening on http://localhost%s/mcp", addr)

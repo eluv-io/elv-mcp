@@ -1,6 +1,7 @@
 package mcpserver
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -10,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/modelcontextprotocol/go-sdk/auth"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 
 	"github.com/qluvio/elv-mcp-experiment/types"
@@ -108,4 +110,46 @@ func loggingMiddleware(next http.Handler) http.Handler {
 		log.Printf("HTTP %s %s from %s", r.Method, r.URL.Path, r.RemoteAddr)
 		next.ServeHTTP(w, r)
 	})
+}
+
+// selectiveAuthMiddleware applies OAuth bearer token verification to all MCP
+// methods except initialize and notifications/initialized, which ChatGPT
+// requires to be unauthenticated.
+func selectiveAuthMiddleware(verifier auth.TokenVerifier, opts *auth.RequireBearerTokenOptions) func(http.Handler) http.Handler {
+	bearerMiddleware := auth.RequireBearerToken(verifier, opts)
+
+	return func(next http.Handler) http.Handler {
+		protected := bearerMiddleware(next)
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			// GET (SSE stream) and DELETE (session teardown) pass through unauthenticated
+			if r.Method != http.MethodPost {
+				next.ServeHTTP(w, r)
+				return
+			}
+
+			// Read and buffer the body so we can peek at the JSON-RPC method
+			body, err := io.ReadAll(r.Body)
+			if err != nil {
+				http.Error(w, "failed to read request body", http.StatusBadRequest)
+				return
+			}
+			r.Body = io.NopCloser(bytes.NewReader(body))
+
+			var msg struct {
+				Method string `json:"method"`
+			}
+			_ = json.Unmarshal(body, &msg)
+
+			// Allow initialize and notifications/initialized without auth
+			if msg.Method == "initialize" || msg.Method == "notifications/initialized" {
+				log.Printf("Allowing unauthenticated %s request", msg.Method)
+				next.ServeHTTP(w, r)
+				return
+			}
+
+			// All other methods (tools/list, tools/call, etc.) require OAuth
+			r.Body = io.NopCloser(bytes.NewReader(body))
+			protected.ServeHTTP(w, r)
+		})
+	}
 }

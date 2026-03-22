@@ -4,7 +4,9 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/modelcontextprotocol/go-sdk/auth"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
+	"github.com/modelcontextprotocol/go-sdk/oauthex"
 	"github.com/qluvio/elv-mcp-experiment/types"
 )
 
@@ -32,13 +34,37 @@ func NewServer(cfg *types.Config) *mcp.Server {
 	return server
 }
 
-// NewHTTPMux constructs the HTTP mux and SSE handler.
-func NewHTTPMux(server *mcp.Server) *http.ServeMux {
-	sseHandler := mcp.NewSSEHandler(func(r *http.Request) *mcp.Server { return server }, nil)
+// NewHTTPMux constructs the HTTP mux with Streamable HTTP transport, OAuth
+// middleware, and the .well-known/oauth-protected-resource discovery endpoint.
+func NewHTTPMux(server *mcp.Server, cfg *types.Config) *http.ServeMux {
+	streamHandler := mcp.NewStreamableHTTPHandler(
+		func(r *http.Request) *mcp.Server { return server },
+		&mcp.StreamableHTTPOptions{},
+	)
+
+	resourceMetadataURL := cfg.ResourceURL + "/.well-known/oauth-protected-resource"
+
+	// Selective auth: initialize and notifications/initialized pass through,
+	// everything else (tools/list, tools/call) requires OAuth bearer token.
+	authMiddleware := selectiveAuthMiddleware(
+		NewTokenVerifier(cfg),
+		&auth.RequireBearerTokenOptions{
+			ResourceMetadataURL: resourceMetadataURL,
+		},
+	)
+
+	// Protected resource metadata (RFC 9728) tells ChatGPT where to get tokens.
+	metadata := &oauthex.ProtectedResourceMetadata{
+		Resource:               cfg.ResourceURL,
+		AuthorizationServers:   []string{cfg.OAuthIssuer},
+		ScopesSupported:        []string{"openid", "offline_access"},
+		BearerMethodsSupported: []string{"header"},
+		ResourceName:           "Eluvio Search MCP Server",
+	}
 
 	mux := http.NewServeMux()
-	// Wrap with recovery & simple logging so panics / handler issues don't kill the process
-	mux.Handle("/mcp", loggingMiddleware(recoverMiddleware(sseHandler)))
+	mux.Handle("/mcp", loggingMiddleware(recoverMiddleware(authMiddleware(streamHandler))))
+	mux.Handle("/.well-known/oauth-protected-resource", auth.ProtectedResourceMetadataHandler(metadata))
 
 	return mux
 }
