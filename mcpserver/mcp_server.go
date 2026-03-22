@@ -3,6 +3,8 @@ package mcpserver
 import (
 	"context"
 	"net/http"
+	"net/url"
+	"strings"
 
 	"github.com/modelcontextprotocol/go-sdk/auth"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
@@ -37,9 +39,20 @@ func NewServer(cfg *types.Config) *mcp.Server {
 // NewHTTPMux constructs the HTTP mux with Streamable HTTP transport, OAuth
 // middleware, and the .well-known/oauth-protected-resource discovery endpoint.
 func NewHTTPMux(server *mcp.Server, cfg *types.Config) *http.ServeMux {
+	// Disable localhost DNS rebinding protection when serving behind a reverse
+	// proxy (e.g. ngrok) — the socket is loopback but the Host header is the
+	// public hostname, which the SDK would otherwise reject.
+	behindProxy := false
+	if u, err := url.Parse(cfg.ResourceURL); err == nil {
+		host := strings.ToLower(u.Hostname())
+		behindProxy = host != "localhost" && host != "127.0.0.1" && host != "::1"
+	}
+
 	streamHandler := mcp.NewStreamableHTTPHandler(
 		func(r *http.Request) *mcp.Server { return server },
-		&mcp.StreamableHTTPOptions{},
+		&mcp.StreamableHTTPOptions{
+			DisableLocalhostProtection: behindProxy,
+		},
 	)
 
 	resourceMetadataURL := cfg.ResourceURL + "/.well-known/oauth-protected-resource"
@@ -62,9 +75,11 @@ func NewHTTPMux(server *mcp.Server, cfg *types.Config) *http.ServeMux {
 		ResourceName:           "Eluvio Search MCP Server",
 	}
 
+	prHandler := auth.ProtectedResourceMetadataHandler(metadata)
+
 	mux := http.NewServeMux()
-	mux.Handle("/mcp", loggingMiddleware(recoverMiddleware(authMiddleware(streamHandler))))
-	mux.Handle("/.well-known/oauth-protected-resource", auth.ProtectedResourceMetadataHandler(metadata))
+	mux.Handle("/", loggingMiddleware(recoverMiddleware(authMiddleware(streamHandler))))
+	mux.Handle("/.well-known/oauth-protected-resource", prHandler)
 
 	return mux
 }

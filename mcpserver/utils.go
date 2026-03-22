@@ -137,11 +137,15 @@ func selectiveAuthMiddleware(verifier auth.TokenVerifier, opts *auth.RequireBear
 
 			var msg struct {
 				Method string `json:"method"`
+				Params struct {
+					Name string `json:"name"`
+				} `json:"params"`
 			}
 			_ = json.Unmarshal(body, &msg)
 
-			// Allow initialize and notifications/initialized without auth
-			if msg.Method == "initialize" || msg.Method == "notifications/initialized" {
+			// Allow initialize, notifications/initialized, and refresh_clips without auth
+			if msg.Method == "initialize" || msg.Method == "notifications/initialized" ||
+				(msg.Method == "tools/call" && msg.Params.Name == "refresh_clips") {
 				log.Printf("Allowing unauthenticated %s request", msg.Method)
 				next.ServeHTTP(w, r)
 				return

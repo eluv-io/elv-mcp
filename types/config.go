@@ -64,11 +64,11 @@ func LoadConfig() (*Config, error) {
 	// 2. Return Pointer (&Config)
 	oauthIssuer := os.Getenv("OAUTH_ISSUER")
 	if oauthIssuer == "" {
-		oauthIssuer = "https://eloquent-carson-yt726m2tf6.projects.oryapis.com"
+		oauthIssuer = "https://confident-dewdney-govmlzzeyi.projects.oryapis.com"
 	}
 	resourceURL := os.Getenv("RESOURCE_URL")
 	if resourceURL == "" {
-		resourceURL = "https://localhost:8080"
+		resourceURL = "https://buffy-valleculate-suably.ngrok-free.dev"
 	}
 
 	cfg := &Config{
