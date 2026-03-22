@@ -9,7 +9,6 @@ import (
 	"math/big"
 	"net/http"
 	"net/url"
-	"os"
 	"strings"
 	"time"
 
@@ -28,11 +27,11 @@ import (
 	"github.com/qluvio/elv-mcp-experiment/types"
 )
 
-func generateStateChannel() string {
+func generateStateChannel(cfg *types.Config) string {
 
-	ethUrl := os.Getenv("ETH_URL")
-	pkStr := os.Getenv("PRIVATE_KEY")
-	qIdStr := os.Getenv("QID_INDEX")
+	ethUrl := cfg.EthUrl
+	pkStr := cfg.PkStr
+	qIdStr := cfg.QIndexID
 	usrCtx := make([]map[string]interface{}, 0)
 
 	ec, err := ethclient.Dial(ethUrl)

@@ -11,13 +11,39 @@ import (
 	"sync"
 
 	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/joho/godotenv"
+	"gopkg.in/yaml.v2"
 
 	"github.com/eluv-io/common-go/format/types"
 	"github.com/eluv-io/errors-go"
 )
 
-// Config holds all environment-driven configuration used by the server.
+// yamlConfig mirrors the config.yaml structure.
+type yamlConfig struct {
+	Server yamlServer `yaml:"server"`
+	Fabric yamlFabric `yaml:"fabric"`
+	Dev    yamlDev    `yaml:"dev"`
+}
+
+type yamlServer struct {
+	OAuthIssuer string `yaml:"oauth_issuer"`
+	ResourceURL string `yaml:"resource_url"`
+}
+
+type yamlFabric struct {
+	QLibIndexID  string `yaml:"qlibid_index"`
+	QIndexID     string `yaml:"qid_index"`
+	SearchIdxUrl string `yaml:"search_base_url"`
+	ImgBaseUrl   string `yaml:"image_base_url"`
+	VidBaseUrl   string `yaml:"vid_base_url"`
+	EthUrl       string `yaml:"eth_url"`
+	QSpaceID     string `yaml:"qspace_id"`
+}
+
+type yamlDev struct {
+	PrivateKey string `yaml:"private_key"`
+}
+
+// Config holds all configuration used by the server.
 type Config struct {
 	// Mu protects the token fields below from concurrent access
 	Mu      sync.RWMutex
@@ -41,54 +67,56 @@ type Config struct {
 	ResourceURL string // This server's public URL (for protected resource metadata)
 }
 
-// LoadConfig returns a POINTER (*Config) so we share the same instance
+// LoadConfig reads config.yaml and returns a shared *Config instance.
 func LoadConfig() (*Config, error) {
-	err := godotenv.Load()
+	data, err := os.ReadFile("config.yaml")
 	if err != nil {
-		log.Println("Warning: Error loading .env file")
+		return nil, fmt.Errorf("failed to read config.yaml: %w", err)
 	}
 
-	// 1. Parse Private Key
-	pkStr := os.Getenv("PRIVATE_KEY")
+	var yc yamlConfig
+	if err := yaml.Unmarshal(data, &yc); err != nil {
+		return nil, fmt.Errorf("failed to parse config.yaml: %w", err)
+	}
+
+	// Parse Private Key
+	pkStr := yc.Dev.PrivateKey
 	if strings.HasPrefix(pkStr, "0x") {
 		pkStr = pkStr[2:]
 	}
 	privateKey, err := crypto.HexToECDSA(pkStr)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse PRIVATE_KEY: %w", err)
+		return nil, fmt.Errorf("failed to parse dev.private_key: %w", err)
 	}
 
-	qlibIndexID := os.Getenv("QLIBID_INDEX")
-	qidIndexID := os.Getenv("QID_INDEX")
-
-	// 2. Return Pointer (&Config)
-	oauthIssuer := os.Getenv("OAUTH_ISSUER")
+	// Apply defaults for optional OAuth fields
+	oauthIssuer := yc.Server.OAuthIssuer
 	if oauthIssuer == "" {
 		oauthIssuer = "https://confident-dewdney-govmlzzeyi.projects.oryapis.com"
 	}
-	resourceURL := os.Getenv("RESOURCE_URL")
+	resourceURL := yc.Server.ResourceURL
 	if resourceURL == "" {
-		resourceURL = "https://buffy-valleculate-suably.ngrok-free.dev"
+		resourceURL = "https://appsvc.svc.eluv.io/mcp"
 	}
 
 	cfg := &Config{
-		QlibTest:     types.QLibID(qlibIndexID),
-		QIDTest:      types.QID(qidIndexID),
-		QLibIndexID:  qlibIndexID,
-		QIndexID:     qidIndexID,
-		SearchIdxUrl: os.Getenv("SEARCH_BASE_URL"),
-		ImgBaseUrl:   os.Getenv("IMAGE_BASE_URL"),
-		VidBaseUrl:   os.Getenv("VID_BASE_URL"),
-		EthUrl:       os.Getenv("ETH_URL"),
-		PkStr:        os.Getenv("PRIVATE_KEY"),
+		QlibTest:     types.QLibID(yc.Fabric.QLibIndexID),
+		QIDTest:      types.QID(yc.Fabric.QIndexID),
+		QLibIndexID:  yc.Fabric.QLibIndexID,
+		QIndexID:     yc.Fabric.QIndexID,
+		SearchIdxUrl: yc.Fabric.SearchIdxUrl,
+		ImgBaseUrl:   yc.Fabric.ImgBaseUrl,
+		VidBaseUrl:   yc.Fabric.VidBaseUrl,
+		EthUrl:       yc.Fabric.EthUrl,
+		PkStr:        yc.Dev.PrivateKey,
 		PkStrTest:    privateKey,
-		QSpaceID:     os.Getenv("QSPACE_ID"),
-		OAuthIssuer: oauthIssuer,
-		ResourceURL: resourceURL,
+		QSpaceID:     yc.Fabric.QSpaceID,
+		OAuthIssuer:  oauthIssuer,
+		ResourceURL:  resourceURL,
 	}
 
 	if cfg.QLibIndexID == "" || cfg.QIndexID == "" || cfg.SearchIdxUrl == "" {
-		return cfg, errors.E("config", errors.K.Invalid, "reason", "missing env variables")
+		return cfg, errors.E("config", errors.K.Invalid, "reason", "missing required fields in config.yaml")
 	}
 
 	return cfg, nil

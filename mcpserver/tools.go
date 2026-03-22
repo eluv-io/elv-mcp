@@ -21,7 +21,7 @@ func SearchClips(ctx context.Context, req *mcp.CallToolRequest, args types.Searc
 		return toolError("Invalid request: search terms must not be empty", nil)
 	}
 
-	sTok, err := auth.FetchStateChannel(cfg.SCToken)
+	sTok, err := auth.FetchStateChannel(cfg, cfg.SCToken)
 	if err != nil {
 		return toolError("Failed to fetch state token", err)
 	}
@@ -94,7 +94,7 @@ func SearchClips(ctx context.Context, req *mcp.CallToolRequest, args types.Searc
 
 		var thumb string
 		if showThumbs {
-			stok, err := auth.FetchStateChannel(cfg.SCToken)
+			stok, err := auth.FetchStateChannel(cfg, cfg.SCToken)
 			if err != nil {
 				return toolError("Failed to fetch state token", err)
 			}
@@ -193,7 +193,7 @@ func RefreshToken(ctx context.Context, req *mcp.CallToolRequest, args types.Refr
 	first := args.Contents[0]
 
 	// Create State token
-	newStateToken, err := auth.FetchStateChannel("")
+	newStateToken, err := auth.FetchStateChannel(cfg, "")
 	if err != nil {
 		return toolError("Failed to fetch state token", err)
 	}

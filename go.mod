@@ -7,8 +7,8 @@ require (
 	github.com/eluv-io/errors-go v1.0.4
 	github.com/eluv-io/utc-go v1.0.1
 	github.com/ethereum/go-ethereum v1.17.1
-	github.com/joho/godotenv v1.5.1
 	github.com/modelcontextprotocol/go-sdk v1.4.1
+	gopkg.in/yaml.v2 v2.4.0
 )
 
 require (
@@ -69,7 +69,6 @@ require (
 	golang.org/x/sync v0.18.0 // indirect
 	golang.org/x/sys v0.40.0 // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1 // indirect
-	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
 
 replace github.com/fxamacker/cbor/v2 => github.com/eluv-io/cbor/v2 v2.8.1-0.20250506081522-e7b11bfa1dad

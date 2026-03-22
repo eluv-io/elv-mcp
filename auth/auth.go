@@ -9,20 +9,20 @@ import (
 	"github.com/qluvio/elv-mcp-experiment/types"
 )
 
-func FetchStateChannel(token string) (string, error) {
+func FetchStateChannel(cfg *types.Config, token string) (string, error) {
 	if token != "" {
 		valid, err := validateExp(token)
 		if err != nil {
-			//maybe return generateStateChannel()
+			//maybe return generateStateChannel(cfg)
 			return "", err
 		}
 		if !valid {
-			return generateStateChannel(), nil
+			return generateStateChannel(cfg), nil
 		}
 		return token, nil
 	}
 
-	return generateStateChannel(), nil
+	return generateStateChannel(cfg), nil
 }
 
 func FetchEditorSigned(cfg *types.Config, QLibID, QID string) (string, error) {
