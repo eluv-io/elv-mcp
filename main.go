@@ -15,7 +15,7 @@ func main() {
 		log.Fatalf("failed to load config: %v", err)
 	}
 	// Creating StateChannel token
-	stateToken, err := auth.FetchStateChannel("")
+	stateToken, err := auth.FetchStateChannel(cfg, "")
 	if err != nil {
 		log.Fatalf("Failed to fetch state token: %v", err)
 	}
