@@ -1,18 +1,34 @@
-# Eluvio Search MCP Server
+# Eluvio Content Fabric MCP Server
 
-This tool lets MCP-enabled LLMs (Claude, OpenAI, etc.) search for clips using the **Eluvio Content SearchAI** and return **ready-to-play video clip results**.
+Allows MCP-enabled LLMs (ChatGPT, Claude, OpenAI, etc.) to access Eluvio Content Fabric functions such as search, clipping and comoposition generation, library content and metadata management and reporting, etc.
 Built in **Go**, it signs thumbnails and video URLs automatically and delivers structured search data.
 
-**Provided Tool**
-- `search_clips`
+Currently only one tool implemented: search API.  More tools coming soon.
 
-**Output Includes**
-- Start/end timestamps for each clip
-- Signed video URLs (direct playback)
-- Signed thumbnail URLs
-- JSON Response
+### Tools
 
-# Setup
+#### `search_clips`
+
+  Outputs:
+  - Start/end timestamps for each clip
+  - Signed video URLs (direct playback)
+  - Signed thumbnail URLs
+  - Metadata fields: display_title, release_date, ip_title_id
+
+# How to Use
+
+## ChatGPT
+
+### Using the Eluvio MCP server
+
+- Settings - enable "Developer Mode"
+- Settings - "Create App"
+  - Name: Eluvio Content Fabric
+  - MCP URL: https://mcp.svc.eluv.io
+  - Authorization: 'oauth'
+
+# Developer Setup
+
 ## Install Go
 https://go.dev/dl/
 
@@ -27,9 +43,8 @@ brew install --cask ngrok
 ## Clone Github repository
 
 ```bash
-git clone git@github.com:qluvio/elv-mcp-experiment.git
-cd elv-mcp-experiment
-go mod tidy
+git clone git@github.com:eluv-io/elv-mcp.git
+cd elv-mcp
 ```
 
 ## Configure `config.yaml`
@@ -67,7 +82,6 @@ fabric:
 dev:
   private_key: "0x..."
 ```
-
 
 
 | Field | Description |
@@ -108,31 +122,17 @@ https://cool-ngrok-url.ngrok.io
 
 In your MCP-enabled LLM (Claude, ChatGPT MCP, etc.), add a connector:
 
-`<NGROK_LINK>/mcp`
+`<NGROK_LINK>`
 
 Example:
-`https://cool-ngrok-url.ngrok.io/mcp`
-
-
-## Prompt Example
-```text
-Use the Fabric tool to search for {topic or scene} clips.
-Return the top {number} results and display them as clickable thumbnails using Markdown.
-Each result must include:
-
-A thumbnail image URL embedded inside a clickable link,
-formatted exactly like this: [![MovieTitle or description](THUMBNAIL_URL)](VIDEO_URL)
-
-Do not return HTML tags, only Markdown.
-```
+`https://cool-ngrok-url.ngrok.io`
 
 
 ## MCP Tool Details
 
-### Tool Name
-search_clips
+### `search_clips`
 
-### Input Structure (Args)
+#### Input Structure (Args)
 
 | Field | Type | Default | Notes |
 |-------|------|---------|-------|
@@ -147,16 +147,3 @@ search_clips
 | `clips` | *bool | true | Return clips? |
 | `clips_include_source_tags` | *bool | true | Include metadata |
 | `thumbnails` | *bool | true | Return thumbnails |
-
-## Development Notes
-
-- HTTP client is reused (connection reuse optimization)
-- Video URL builder extracts `hq__` / `iq__` hashes
-- Thumbnail URL builder prevents duplicate `/q/`
-- Adds access tokens to both:
-    - Header (Bearer)
-    - Query param (`authorization=`)
-- OAuth2/JWT authorization support via Ory
-- State channel token is fetched on startup for signing
-- For full documentation, consult Eluvio Search AI API docs.
-
