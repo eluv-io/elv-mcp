@@ -1,6 +1,6 @@
 # Eluvio Search MCP Server
 
-This tool lets MCP-enabled LLMs (Claude, OpenAI, etc.) search for clips using the **Eluvio Content SearchAI** and return **ready-to-play video clip results**.  
+This tool lets MCP-enabled LLMs (Claude, OpenAI, etc.) search for clips using the **Eluvio Content SearchAI** and return **ready-to-play video clip results**.
 Built in **Go**, it signs thumbnails and video URLs automatically and delivers structured search data.
 
 **Provided Tool**
@@ -11,6 +11,7 @@ Built in **Go**, it signs thumbnails and video URLs automatically and delivers s
 - Signed video URLs (direct playback)
 - Signed thumbnail URLs
 - JSON Response
+
 # Setup
 ## Install Go
 https://go.dev/dl/
@@ -27,34 +28,78 @@ brew install --cask ngrok
 
 ```bash
 git clone git@github.com:qluvio/elv-mcp-experiment.git
-cd <YourRepo>/elv-mcp-experiment
-git mod tidy
+cd elv-mcp-experiment
+go mod tidy
 ```
-## Set Environment Variables
 
-| Variable | Description |
-|---------|-------------|
-| `SEARCH_BASE_URL` | Base search endpoint URL |
-| `QLIBID_INDEX` | QLib QID for search queries |
-| `QID_INDEX` | QID for search queries |
-| `INDEX_AUTH_TOKEN` | Bearer auth token for search |
-| `IMAGE_BASE_URL` | Base URL for thumbnails |
-| `QAUTH_TOKEN` | Video authorization token |
-| `VID_BASE_URL` | Base URL for constructed video URLs |
-### Example: Set `.env` variables
-export SEARCH_BASE_URL="https://hosted-search.example/api"  
-export QLIBID_INDEX="iq__123..."  
-export QID_INDEX="hq__abc..."  
-export INDEX_AUTH_TOKEN="eyJhbGciOiJI..."  
-export IMAGE_BASE_URL="https://images.fabric.example"  
-export QAUTH_TOKEN="ht__456..."  
-export VID_BASE_URL="https://videos.fabric.example"
+## Configure `config.yaml`
+
+Copy the sample config and fill in your values:
+
+```bash
+cp config-sample.yaml config.yaml
+```
+
+Edit `config.yaml`:
+
+```yaml
+log:
+  level: info
+  formatter: text
+  file:
+    filename: elvmcp.log
+    maxsize: 100
+    maxbackups: 5
+
+server:
+  oauth_issuer: https://<your-ory-project>.projects.oryapis.com
+  resource_url: https://<your-public-hostname>
+
+fabric:
+  qlibid_index: "ilib..."
+  qid_index: "iq__..."
+  search_base_url: "https://ai.contentfabric.io"
+  image_base_url: "https://main.net955305.contentfabric.io"
+  vid_base_url: "https://embed.v3.contentfabric.io"
+  eth_url: "https://host-76-74-34-194.contentfabric.io/eth/"
+  qspace_id: "ispc2RUoRe9eR2v33HARQUVSp1rYXzw1"
+
+dev:
+  private_key: "0x..."
+```
+
+
+
+| Field | Description |
+|-------|-------------|
+| `server.oauth_issuer` | Ory OAuth2 issuer URL (optional, has default) |
+| `server.resource_url` | This server's public URL for OAuth metadata (optional, has default) |
+| `fabric.qlibid_index` | QLib ID for the search index |
+| `fabric.qid_index` | QID for the search index |
+| `fabric.search_base_url` | Base URL for the search API |
+| `fabric.image_base_url` | Base URL for thumbnail images |
+| `fabric.vid_base_url` | Base URL for video playback |
+| `fabric.eth_url` | Ethereum/fabric node URL |
+| `fabric.qspace_id` | QSpace ID |
+| `dev.private_key` | ECDSA private key (hex) for signing requests |
 
 ## Run the MCP server
-go run .
+
+```bash
+go run ./cmd/elvmcpd
+```
+
 
 ## Start Ngrok tunnel
-ngrok http 8080
+```bash
+ngrok http 8181
+```
+
+or:
+
+```bash
+make ngrok
+```
 
 ## Copy the URL output, for example:
 https://cool-ngrok-url.ngrok.io
@@ -63,27 +108,23 @@ https://cool-ngrok-url.ngrok.io
 
 In your MCP-enabled LLM (Claude, ChatGPT MCP, etc.), add a connector:
 
-<NGROK_LINK>/mcp
+`<NGROK_LINK>/mcp`
 
 Example:
-https://cool-ngrok-url.ngrok.io/mcp
+`https://cool-ngrok-url.ngrok.io/mcp`
 
 
 ## Prompt Example
 ```text
-Use the Fabric tool to search for {topic or scene} clips. 
-Return the top {number} results and display them as clickable thumbnails using Markdown. 
-Each result must include: 
+Use the Fabric tool to search for {topic or scene} clips.
+Return the top {number} results and display them as clickable thumbnails using Markdown.
+Each result must include:
 
-A thumbnail image URL embedded inside a clickable link, 
-formatted exactly like this: [![MovieTitle or description](THUMBNAIL_URL)](VIDEO_URL) 
+A thumbnail image URL embedded inside a clickable link,
+formatted exactly like this: [![MovieTitle or description](THUMBNAIL_URL)](VIDEO_URL)
 
 Do not return HTML tags, only Markdown.
 ```
-
-
-
-
 
 
 ## MCP Tool Details
@@ -106,6 +147,7 @@ search_clips
 | `clips` | *bool | true | Return clips? |
 | `clips_include_source_tags` | *bool | true | Include metadata |
 | `thumbnails` | *bool | true | Return thumbnails |
+
 ## Development Notes
 
 - HTTP client is reused (connection reuse optimization)
@@ -114,22 +156,7 @@ search_clips
 - Adds access tokens to both:
     - Header (Bearer)
     - Query param (`authorization=`)
+- OAuth2/JWT authorization support via Ory
+- State channel token is fetched on startup for signing
 - For full documentation, consult Eluvio Search AI API docs.
-## Done!
-You now have an MCP-powered Eluvio Search Tool with full clip & thumbnail support. 🎬  
-Happy hunting!
 
-
-
-
-
-Publish to Github MCP Registry
-
-- Security
-- How are curently consumers accessing the search AI? what is the verification process?
-- how do they get auth tokens etc?
-- wider functionality?
-- better search more interpreting
-- maybe get metadata if you want 
-- where do we put limits to that
-- 
