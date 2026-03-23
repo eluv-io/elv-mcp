@@ -89,11 +89,6 @@ dev:
 go run ./cmd/elvmcpd
 ```
 
-Or using make:
-
-```bash
-make run
-```
 
 ## Start Ngrok tunnel
 ```bash
@@ -165,6 +160,3 @@ search_clips
 - State channel token is fetched on startup for signing
 - For full documentation, consult Eluvio Search AI API docs.
 
-## Done!
-You now have an MCP-powered Eluvio Search Tool with full clip & thumbnail support.
-Happy hunting!
