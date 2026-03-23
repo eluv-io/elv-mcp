@@ -28,7 +28,7 @@ func main() {
 	server := mcpserver.NewServer(cfg)
 	mux := mcpserver.NewHTTPMux(server, cfg)
 
-	addr := ":8080"
+	addr := ":8181"
 	log.Info("MCP server listening", "addr", "http://localhost"+addr+"/mcp")
 	if err := http.ListenAndServe(addr, mux); err != nil {
 		log.Fatal("http server failed", err)
