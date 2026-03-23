@@ -6,23 +6,22 @@ import (
 	"github.com/eluv-io/common-go/format/eat"
 	"github.com/eluv-io/errors-go"
 
-	"github.com/qluvio/elv-mcp-experiment/types"
+	"github.com/qluvio/elv-mcp/types"
 )
 
-func FetchStateChannel(token string) (string, error) {
+func FetchStateChannel(cfg *types.Config, token string) (string, error) {
 	if token != "" {
 		valid, err := validateExp(token)
 		if err != nil {
-			//maybe return generateStateChannel()
 			return "", err
 		}
 		if !valid {
-			return generateStateChannel(), nil
+			return generateStateChannel(cfg)
 		}
 		return token, nil
 	}
 
-	return generateStateChannel(), nil
+	return generateStateChannel(cfg)
 }
 
 func FetchEditorSigned(cfg *types.Config, QLibID, QID string) (string, error) {
@@ -32,11 +31,11 @@ func FetchEditorSigned(cfg *types.Config, QLibID, QID string) (string, error) {
 			return "", err
 		}
 		if !valid {
-			return generateEditorSigned(cfg, QLibID, QID), nil
+			return generateEditorSigned(cfg, QLibID, QID)
 		}
 		return cfg.ESToken, nil
 	}
-	return generateEditorSigned(cfg, QLibID, QID), nil
+	return generateEditorSigned(cfg, QLibID, QID)
 }
 
 func validateExp(token string) (bool, error) {

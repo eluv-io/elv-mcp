@@ -5,14 +5,13 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log"
 	"math/big"
 	"net/http"
 	"net/url"
-	"os"
 	"strings"
 	"time"
 
+	elog "github.com/eluv-io/log-go"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
@@ -25,19 +24,22 @@ import (
 	types2 "github.com/eluv-io/common-go/format/types"
 	"github.com/eluv-io/utc-go"
 
-	"github.com/qluvio/elv-mcp-experiment/types"
+	"github.com/qluvio/elv-mcp/types"
 )
 
-func generateStateChannel() string {
+var log = elog.Get("/auth")
 
-	ethUrl := os.Getenv("ETH_URL")
-	pkStr := os.Getenv("PRIVATE_KEY")
-	qIdStr := os.Getenv("QID_INDEX")
+func generateStateChannel(cfg *types.Config) (string, error) {
+
+	ethUrl := cfg.EthUrl
+	pkStr := cfg.PkStr
+	qIdStr := cfg.QIndexID
 	usrCtx := make([]map[string]interface{}, 0)
 
 	ec, err := ethclient.Dial(ethUrl)
 	if err != nil {
-		log.Fatal("Error connecting to the node", err)
+		log.Error("error connecting to the node", err)
+		return "", fmt.Errorf("error connecting to the node: %w", err)
 	}
 	defer ec.Close()
 
@@ -46,13 +48,15 @@ func generateStateChannel() string {
 	}
 	pk, err := crypto.HexToECDSA(pkStr)
 	if err != nil {
-		log.Fatal("Error generating private key", err)
+		log.Error("error generating private key", err)
+		return "", fmt.Errorf("error generating private key: %w", err)
 	}
 	userAddr := crypto.PubkeyToAddress(pk.PublicKey)
 
 	qId, err := id.FromString(qIdStr)
 	if err != nil {
-		log.Fatal(err)
+		log.Error("error parsing QID", err)
+		return "", fmt.Errorf("error parsing QID: %w", err)
 	}
 	contentAddress := IDToAddress(qId)
 
@@ -64,11 +68,13 @@ func generateStateChannel() string {
 		big.NewInt(0),
 		tsMillis)
 	if err != nil {
-		log.Fatal(err)
+		log.Error("error hashing batch transaction", err)
+		return "", fmt.Errorf("error hashing batch transaction: %w", err)
 	}
 	sig, err := crypto.Sign(sigHash, pk)
 	if err != nil {
-		log.Fatal(err)
+		log.Error("error signing transaction", err)
+		return "", fmt.Errorf("error signing transaction: %w", err)
 	}
 
 	usrCtxJson := ""
@@ -76,7 +82,8 @@ func generateStateChannel() string {
 		var b []byte
 		b, err = json.Marshal(usrCtx[0])
 		if err != nil {
-			log.Fatal("failed to marshal usr ctx to JSON")
+			log.Error("failed to marshal usr ctx to JSON", err)
+			return "", fmt.Errorf("failed to marshal usr ctx to JSON: %w", err)
 		}
 		usrCtxJson = string(b)
 	}
@@ -94,10 +101,12 @@ func generateStateChannel() string {
 		})
 
 	if err != nil {
-		log.Fatal(err)
+		log.Error("error calling RPC", err)
+		return "", fmt.Errorf("error calling RPC: %w", err)
 	}
-	fmt.Println(" Code generated statechannel Token:", res.(string))
-	return res.(string)
+	token := res.(string)
+	log.Info("state channel token generated", "token", token)
+	return token, nil
 }
 
 // To implement abi.encodePacked(address, address, uint256, uint256) solidity method
@@ -206,19 +215,22 @@ func CallRpcUrl(rawUrl string, method string, params []interface{}) (interface{}
 	return nil, fmt.Errorf("Unsupported scheme: %s\n", u.Scheme)
 }
 
-func generateEditorSigned(cfg *types.Config, Qlib, QID string) string {
+func generateEditorSigned(cfg *types.Config, Qlib, QID string) (string, error) {
 	QLibID, err := id.FromString(Qlib)
 	if err != nil {
-		log.Fatalf("Invalid QLib format: %v", err)
+		log.Error("invalid QLib format", err)
+		return "", fmt.Errorf("invalid QLib format: %w", err)
 	}
 
 	parsedQID, err := id.FromString(QID)
 	if err != nil {
-		log.Fatalf("Invalid QID format: %v", err)
+		log.Error("invalid QID format", err)
+		return "", fmt.Errorf("invalid QID format: %w", err)
 	}
 	parsedSpaceID, err := id.FromString(cfg.QSpaceID)
 	if err != nil {
-		log.Fatalf("Invalid QSpaceID format: %v", err)
+		log.Error("invalid QSpaceID format", err)
+		return "", fmt.Errorf("invalid QSpaceID format: %w", err)
 	}
 	finalLibID := types2.QLibID(QLibID)
 	finalQID := types2.QID(parsedQID)
@@ -233,10 +245,11 @@ func generateEditorSigned(cfg *types.Config, Qlib, QID string) string {
 	// Parse Hex to Struct
 	privateKey, err := crypto.HexToECDSA(rawKey)
 	if err != nil {
-		log.Fatalf("Failed to parse private key: %v", err)
+		log.Error("failed to parse private key", err)
+		return "", fmt.Errorf("failed to parse private key: %w", err)
 	}
 
-	log.Printf("generate QlibID: %s, QID: %s", finalLibID.String(), finalQID.String())
+	log.Debug("generating editor signed token", "qlib_id", finalLibID.String(), "qid", finalQID.String())
 
 	now := utc.Now()
 
@@ -248,9 +261,10 @@ func generateEditorSigned(cfg *types.Config, Qlib, QID string) string {
 	// Note: We pass the parsed 'privateKey' struct here
 	bearer, err := builder.Sign(privateKey).Encode()
 	if err != nil {
-		log.Fatal(err)
+		log.Error("failed to encode editor signed token", err)
+		return "", fmt.Errorf("failed to encode editor signed token: %w", err)
 	}
 
-	log.Println("Generated code editor signed token:", bearer)
-	return bearer
+	log.Debug("editor signed token generated", "token", bearer)
+	return bearer, nil
 }

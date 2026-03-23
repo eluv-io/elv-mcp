@@ -3,9 +3,13 @@ package mcpserver
 import (
 	"context"
 	"net/http"
+	"net/url"
+	"strings"
 
+	"github.com/modelcontextprotocol/go-sdk/auth"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
-	"github.com/qluvio/elv-mcp-experiment/types"
+	"github.com/modelcontextprotocol/go-sdk/oauthex"
+	"github.com/qluvio/elv-mcp/types"
 )
 
 // NewServer wires up the MCP server and tools with the provided config.
@@ -32,13 +36,50 @@ func NewServer(cfg *types.Config) *mcp.Server {
 	return server
 }
 
-// NewHTTPMux constructs the HTTP mux and SSE handler.
-func NewHTTPMux(server *mcp.Server) *http.ServeMux {
-	sseHandler := mcp.NewSSEHandler(func(r *http.Request) *mcp.Server { return server }, nil)
+// NewHTTPMux constructs the HTTP mux with Streamable HTTP transport, OAuth
+// middleware, and the .well-known/oauth-protected-resource discovery endpoint.
+func NewHTTPMux(server *mcp.Server, cfg *types.Config) *http.ServeMux {
+	// Disable localhost DNS rebinding protection when serving behind a reverse
+	// proxy (e.g. ngrok) — the socket is loopback but the Host header is the
+	// public hostname, which the SDK would otherwise reject.
+	behindProxy := false
+	if u, err := url.Parse(cfg.ResourceURL); err == nil {
+		host := strings.ToLower(u.Hostname())
+		behindProxy = host != "localhost" && host != "127.0.0.1" && host != "::1"
+	}
+
+	streamHandler := mcp.NewStreamableHTTPHandler(
+		func(r *http.Request) *mcp.Server { return server },
+		&mcp.StreamableHTTPOptions{
+			DisableLocalhostProtection: behindProxy,
+		},
+	)
+
+	resourceMetadataURL := cfg.ResourceURL + "/.well-known/oauth-protected-resource"
+
+	// Selective auth: initialize and notifications/initialized pass through,
+	// everything else (tools/list, tools/call) requires OAuth bearer token.
+	authMiddleware := selectiveAuthMiddleware(
+		NewTokenVerifier(cfg),
+		&auth.RequireBearerTokenOptions{
+			ResourceMetadataURL: resourceMetadataURL,
+		},
+	)
+
+	// Protected resource metadata (RFC 9728) tells ChatGPT where to get tokens.
+	metadata := &oauthex.ProtectedResourceMetadata{
+		Resource:               cfg.ResourceURL,
+		AuthorizationServers:   []string{cfg.OAuthIssuer},
+		ScopesSupported:        []string{"openid", "offline_access"},
+		BearerMethodsSupported: []string{"header"},
+		ResourceName:           "Eluvio Search MCP Server",
+	}
+
+	prHandler := auth.ProtectedResourceMetadataHandler(metadata)
 
 	mux := http.NewServeMux()
-	// Wrap with recovery & simple logging so panics / handler issues don't kill the process
-	mux.Handle("/mcp", loggingMiddleware(recoverMiddleware(sseHandler)))
+	mux.Handle("/", loggingMiddleware(recoverMiddleware(authMiddleware(streamHandler))))
+	mux.Handle("/.well-known/oauth-protected-resource", prHandler)
 
 	return mux
 }

@@ -25,6 +25,14 @@ type ClipItem struct {
 	StartTime int64  `json:"start_time"`
 	EndTime   int64  `json:"end_time"`
 	ESToken   string `json:"esat"`
+
+	// Metadata extracted from the select query parameter response
+	DisplayTitle string `json:"display_title,omitempty"`
+	ReleaseDate  string `json:"release_date,omitempty"`
+	IPTitleID    string `json:"ip_title_id,omitempty"`
+
+	// Meta captures nested metadata returned by the search API
+	Meta map[string]interface{} `json:"meta,omitempty"`
 }
 
 type ClipResponse struct {

@@ -1,0 +1,28 @@
+log:
+  level: info
+  formatter: text
+  file:
+    filename: elvmcp.log
+    maxsize: 100
+    maxbackups: 5
+  # named:
+  #   /auth:
+  #     level: debug
+  #   /mcpserver:
+  #     level: debug
+
+server:
+  # oauth_issuer: https://confident-dewdney-govmlzzeyi.projects.oryapis.com
+  # resource_url: https://buffy-valleculate-suably.ngrok-free.dev
+
+fabric:
+  qlibid_index: ""
+  qid_index: ""
+  search_base_url: ""
+  image_base_url: ""
+  vid_base_url: ""
+  eth_url: ""
+  qspace_id: ""
+
+dev:
+  private_key: ""
