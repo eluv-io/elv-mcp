@@ -53,20 +53,22 @@ log:
 
 server:
   oauth_issuer: https://<your-ory-project>.projects.oryapis.com
-  resource_url: https://<your-public-hostname>/mcp
+  resource_url: https://<your-public-hostname>
 
 fabric:
-  qlibid_index: "iq__..."
-  qid_index: "hq__..."
-  search_base_url: "https://hosted-search.example/api"
-  image_base_url: "https://images.fabric.example"
-  vid_base_url: "https://videos.fabric.example"
-  eth_url: "https://host.svc.eluv.io/eth/"
-  qspace_id: "ispc__..."
+  qlibid_index: "ilib..."
+  qid_index: "iq__..."
+  search_base_url: "https://ai.contentfabric.io"
+  image_base_url: "https://main.net955305.contentfabric.io"
+  vid_base_url: "https://embed.v3.contentfabric.io"
+  eth_url: "https://host-76-74-34-194.contentfabric.io/eth/"
+  qspace_id: "ispc2RUoRe9eR2v33HARQUVSp1rYXzw1"
 
 dev:
   private_key: "0x..."
 ```
+
+
 
 | Field | Description |
 |-------|-------------|
