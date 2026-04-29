@@ -7,6 +7,7 @@ require (
 	github.com/eluv-io/errors-go v1.0.4
 	github.com/eluv-io/log-go v1.0.8
 	github.com/eluv-io/utc-go v1.0.1
+	github.com/qluvio/elv-client-go v0.0.0-20260313203529-db644df07f3a
 	github.com/ethereum/go-ethereum v1.17.1
 	github.com/golang-jwt/jwt/v5 v5.3.1
 	github.com/modelcontextprotocol/go-sdk v1.4.1

@@ -2,7 +2,6 @@ package auth
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"math/big"
@@ -24,36 +23,23 @@ import (
 	types2 "github.com/eluv-io/common-go/format/types"
 	"github.com/eluv-io/utc-go"
 
-	"github.com/qluvio/elv-mcp/types"
+	"github.com/qluvio/elv-mcp/config"
 )
 
 var log = elog.Get("/auth")
 
-func generateStateChannel(cfg *types.Config) (string, error) {
-
-	ethUrl := cfg.EthUrl
-	pkStr := cfg.PkStr
-	qIdStr := cfg.QIndexID
-	usrCtx := make([]map[string]interface{}, 0)
-
-	ec, err := ethclient.Dial(ethUrl)
+func generateStateChannel(cfg *config.Config, tf *config.TenantFabric) (string, error) {
+	ec, err := ethclient.Dial(cfg.EthUrl)
 	if err != nil {
 		log.Error("error connecting to the node", err)
 		return "", fmt.Errorf("error connecting to the node: %w", err)
 	}
 	defer ec.Close()
 
-	if strings.HasPrefix(pkStr, "0x") {
-		pkStr = pkStr[2:]
-	}
-	pk, err := crypto.HexToECDSA(pkStr)
-	if err != nil {
-		log.Error("error generating private key", err)
-		return "", fmt.Errorf("error generating private key: %w", err)
-	}
+	pk := tf.PrivateKey
 	userAddr := crypto.PubkeyToAddress(pk.PublicKey)
 
-	qId, err := id.FromString(qIdStr)
+	qId, err := id.FromString(tf.QIndexID)
 	if err != nil {
 		log.Error("error parsing QID", err)
 		return "", fmt.Errorf("error parsing QID: %w", err)
@@ -77,19 +63,8 @@ func generateStateChannel(cfg *types.Config) (string, error) {
 		return "", fmt.Errorf("error signing transaction: %w", err)
 	}
 
-	usrCtxJson := ""
-	if len(usrCtx) > 0 && usrCtx[0] != nil {
-		var b []byte
-		b, err = json.Marshal(usrCtx[0])
-		if err != nil {
-			log.Error("failed to marshal usr ctx to JSON", err)
-			return "", fmt.Errorf("failed to marshal usr ctx to JSON: %w", err)
-		}
-		usrCtxJson = string(b)
-	}
-
 	res, err := CallRpcUrl(
-		ethUrl,
+		cfg.EthUrl,
 		"elv_channelContentRequestContext",
 		[]interface{}{
 			userAddr,
@@ -97,7 +72,7 @@ func generateStateChannel(cfg *types.Config) (string, error) {
 			big.NewInt(0),
 			tsMillis,
 			hexutil.Encode(sig),
-			usrCtxJson,
+			"",
 		})
 
 	if err != nil {
@@ -105,7 +80,7 @@ func generateStateChannel(cfg *types.Config) (string, error) {
 		return "", fmt.Errorf("error calling RPC: %w", err)
 	}
 	token := res.(string)
-	log.Info("state channel token generated", "token", token)
+	log.Info("state channel token generated")
 	return token, nil
 }
 
@@ -202,12 +177,12 @@ func CallRpcUrl(rawUrl string, method string, params []interface{}) (interface{}
 		}
 
 		if out["error"] != nil {
-			return "", errors.New(fmt.Sprintf("RPC method failure: %v", out["error"]))
+			return "", fmt.Errorf("RPC method failure: %v", out["error"])
 		}
 
 		var result interface{}
 		if out["result"] != nil {
-			result = out["result"].(interface{})
+			result = out["result"]
 		}
 
 		return result, nil
@@ -215,7 +190,7 @@ func CallRpcUrl(rawUrl string, method string, params []interface{}) (interface{}
 	return nil, fmt.Errorf("Unsupported scheme: %s\n", u.Scheme)
 }
 
-func generateEditorSigned(cfg *types.Config, Qlib, QID string) (string, error) {
+func generateEditorSigned(cfg *config.Config, tf *config.TenantFabric, Qlib, QID string) (string, error) {
 	QLibID, err := id.FromString(Qlib)
 	if err != nil {
 		log.Error("invalid QLib format", err)
@@ -236,18 +211,7 @@ func generateEditorSigned(cfg *types.Config, Qlib, QID string) (string, error) {
 	finalQID := types2.QID(parsedQID)
 	finalSpaceID := types2.QSpaceID(parsedSpaceID)
 
-	rawKey := cfg.PkStr
-
-	if strings.HasPrefix(rawKey, "0x") {
-		rawKey = rawKey[2:]
-	}
-
-	// Parse Hex to Struct
-	privateKey, err := crypto.HexToECDSA(rawKey)
-	if err != nil {
-		log.Error("failed to parse private key", err)
-		return "", fmt.Errorf("failed to parse private key: %w", err)
-	}
+	privateKey := tf.PrivateKey
 
 	log.Debug("generating editor signed token", "qlib_id", finalLibID.String(), "qid", finalQID.String())
 
@@ -265,6 +229,6 @@ func generateEditorSigned(cfg *types.Config, Qlib, QID string) (string, error) {
 		return "", fmt.Errorf("failed to encode editor signed token: %w", err)
 	}
 
-	log.Debug("editor signed token generated", "token", bearer)
+	log.Debug("editor signed token generated")
 	return bearer, nil
 }

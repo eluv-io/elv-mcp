@@ -1,44 +1,38 @@
 package mcpserver
 
 import (
-	"context"
 	"net/http"
 	"net/url"
 	"strings"
 
-	"github.com/modelcontextprotocol/go-sdk/auth"
+	elog "github.com/eluv-io/log-go"
+	mcpauth "github.com/modelcontextprotocol/go-sdk/auth"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"github.com/modelcontextprotocol/go-sdk/oauthex"
-	"github.com/qluvio/elv-mcp/types"
+	"github.com/qluvio/elv-mcp/config"
+	"github.com/qluvio/elv-mcp/tasks"
+	"github.com/qluvio/elv-mcp/version"
 )
 
 // NewServer wires up the MCP server and tools with the provided config.
-func NewServer(cfg *types.Config) *mcp.Server {
-	server := mcp.NewServer(&mcp.Implementation{
+func NewServer(cfg *config.Config) *mcp.Server {
+	impl := &mcp.Implementation{
 		Name:    "eluvio-search-mcp",
-		Version: "0.9.0",
-	}, nil)
+		Version: version.Full(),
+	}
+	server := mcp.NewServer(impl, nil)
+	elog.Info("MCP server", "name", impl.Name, "version", impl.Version)
 
-	mcp.AddTool[types.SearchClipsArgs](server, &mcp.Tool{
-		Name:        "search_clips",
-		Description: "Searches the Eluvio Search API and returns video clips.",
-	}, func(ctx context.Context, req *mcp.CallToolRequest, args types.SearchClipsArgs) (*mcp.CallToolResult, any, error) {
-		return SearchClips(ctx, req, args, cfg)
-	})
+	registry := NewToolRegistry(cfg, tasks.All()...)
+	registry.RegisterAll(server)
 
-	mcp.AddTool[types.RefreshClipsArgs](server, &mcp.Tool{
-		Name:        "refresh_clips",
-		Description: "Refreshes auth tokens in existing clip and image URLs.",
-	}, func(ctx context.Context, req *mcp.CallToolRequest, args types.RefreshClipsArgs) (*mcp.CallToolResult, any, error) {
-		return RefreshToken(ctx, req, args, cfg)
-	})
-
+	elog.Info("MCP Server initialized", "tool_count", len(registry.Tasks()), "tools", registry.TaskNames())
 	return server
 }
 
 // NewHTTPMux constructs the HTTP mux with Streamable HTTP transport, OAuth
 // middleware, and the .well-known/oauth-protected-resource discovery endpoint.
-func NewHTTPMux(server *mcp.Server, cfg *types.Config) *http.ServeMux {
+func NewHTTPMux(server *mcp.Server, cfg *config.Config) *http.ServeMux {
 	// Disable localhost DNS rebinding protection when serving behind a reverse
 	// proxy (e.g. ngrok) — the socket is loopback but the Host header is the
 	// public hostname, which the SDK would otherwise reject.
@@ -61,9 +55,8 @@ func NewHTTPMux(server *mcp.Server, cfg *types.Config) *http.ServeMux {
 	// everything else (tools/list, tools/call) requires OAuth bearer token.
 	authMiddleware := selectiveAuthMiddleware(
 		NewTokenVerifier(cfg),
-		&auth.RequireBearerTokenOptions{
-			ResourceMetadataURL: resourceMetadataURL,
-		},
+		resourceMetadataURL,
+		cfg.Tenants,
 	)
 
 	// Protected resource metadata (RFC 9728) tells ChatGPT where to get tokens.
@@ -75,11 +68,23 @@ func NewHTTPMux(server *mcp.Server, cfg *types.Config) *http.ServeMux {
 		ResourceName:           "Eluvio Search MCP Server",
 	}
 
-	prHandler := auth.ProtectedResourceMetadataHandler(metadata)
+	prHandler := mcpauth.ProtectedResourceMetadataHandler(metadata)
 
 	mux := http.NewServeMux()
 	mux.Handle("/", loggingMiddleware(recoverMiddleware(authMiddleware(streamHandler))))
 	mux.Handle("/.well-known/oauth-protected-resource", prHandler)
+
+	elog.Info("HTTP mux initialized",
+		"resource_url", cfg.ResourceURL,
+		"oauth_issuer", cfg.OAuthIssuer,
+		"behind_proxy", behindProxy,
+	)
+
+	elog.Info("HTTP mux initialized",
+		"resource_url", cfg.ResourceURL,
+		"oauth_issuer", cfg.OAuthIssuer,
+		"behind_proxy", behindProxy,
+	)
 
 	return mux
 }

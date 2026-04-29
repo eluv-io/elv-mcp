@@ -1,0 +1,23 @@
+{
+  "contents": [
+    {
+      "qlib_id": "abc",
+      "qid": "123",
+      "start_time": 1000,
+      "end_time": 5000,
+      "video_url": "https://example/video",
+      "image_url": "https://example/thumb",
+      "meta": {
+        "public": {
+          "asset_metadata": {
+            "display_title": "Sample Clip",
+            "ip_title_id": "IP123",
+            "info": {
+              "release_date": "2024-01-01"
+            }
+          }
+        }
+      }
+    }
+  ]
+}

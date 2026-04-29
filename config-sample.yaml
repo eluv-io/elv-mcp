@@ -12,17 +12,36 @@ log:
   #     level: debug
 
 server:
-  # oauth_issuer: https://confident-dewdney-govmlzzeyi.projects.oryapis.com
-  # resource_url: https://buffy-valleculate-suably.ngrok-free.dev
+  oauth_issuer: ""   # required: OAuth2 issuer URL (e.g. https://<your-auth-provider>)
+  resource_url: ""   # required: this server's public URL (e.g. https://<your-ngrok-url>)
 
 fabric:
-  qlibid_index: ""
-  qid_index: ""
   search_base_url: ""
   image_base_url: ""
   vid_base_url: ""
   eth_url: ""
   qspace_id: ""
+  api_url: "" #optional, defaults to https://main.net955305.contentfabric.io
+  tag_store_url: "" #optional, defaults to https://ai.contentfabric.io/tagstore
+  ai_tagger_url: "" #optional, defaults to https://ai.contentfabric.io/tagging-live 
+  
 
-dev:
-  private_key: ""
+tenants:
+  - id: studio-a
+    users:
+      - "user|abc123"   # OAuth2 sub claim (find it by decoding the user's JWT)
+      - "user|def456"
+    fabric:
+      private_key: "0x..."
+      qlibid_index: "ilib..."
+      qid_index: "iq__..."
+      search_collection_id: "iq__..."
+
+  - id: studio-b
+    users:
+      - "user|xyz789"
+    fabric:
+      private_key: "0x..."
+      qlibid_index: "ilib..."
+      qid_index: "iq__..."
+      search_collection_id: "iq__..."
