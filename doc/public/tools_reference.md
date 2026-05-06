@@ -1,5 +1,4 @@
 # Eluvio MCP Server — Tools Reference  
-Authoritative specification generated directly from Go task definitions.
 
 This document describes every MCP tool exposed by the Eluvio MCP Server, including:
 
@@ -328,18 +327,3 @@ List available Tagger models.
   ]
 }
 ``` 
-
----
-
-# Summary
-
-This reference is generated **directly from your Go task definitions** and contains:
-
-- Exact argument schemas  
-- Exact result schemas  
-- No hallucinated fields  
-- No missing fields  
-- No inferred defaults beyond what the code documents  
-
-If you later update any task structs, upload the updated files and this document can be regenerated with the same precision.
-
