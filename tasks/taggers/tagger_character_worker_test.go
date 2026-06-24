@@ -71,13 +71,14 @@ func TestTagCharacters_NoTenant(t *testing.T) {
 }
 
 func TestTagCharacters_DependencyMissing_NoAutoRun(t *testing.T) {
+	Init_mock_models()
 	// Mock tag-status returning NO celeb model
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(map[string]any{
 			"models": []map[string]any{
 				{
-					"model":              "asr",
-					"track":              "speech",
+					"model":              "llava",
+					"track":              "llava_caption",
 					"percent_completion": 1.0,
 				},
 			},
@@ -108,6 +109,8 @@ func TestTagCharacters_DependencyMissing_NoAutoRun(t *testing.T) {
 }
 
 func TestTagCharacters_DependencyMissing_WithAutoRun(t *testing.T) {
+	Init_mock_models()
+
 	var startCalls atomic.Int32
 	var statusCalls atomic.Int32
 
@@ -127,10 +130,10 @@ func TestTagCharacters_DependencyMissing_WithAutoRun(t *testing.T) {
 			json.NewEncoder(w).Encode(map[string]any{
 				"models": []map[string]any{
 					{
-						"model":              "asr",
-						"track":              "speech",
+						"model":              "llava",
+						"track":              "llava_caption",
 						"percent_completion": 1.0,
-					},
+						},
 				},
 			})
 
@@ -263,7 +266,7 @@ func TestTagCharacters_DependencyMissing_WithAutoRun(t *testing.T) {
 		t.Fatalf("expected CharacterTaggingSyncResult, got %T", payload)
 	}
 
-	if len(out.AutoRanDependencies) != 1 || out.AutoRanDependencies[0] != "celeb" {
+	if len(out.AutoRanDependencies) != 1 || out.AutoRanDependencies[0] != taggers.GetModelDependencies(cfg)["characters"][0] {
 		t.Fatalf("expected auto-run celeb, got %v", out.AutoRanDependencies)
 	}
 
@@ -293,8 +296,8 @@ func TestTagCharacters_AsyncSuccess(t *testing.T) {
 			json.NewEncoder(w).Encode(map[string]any{
 				"models": []map[string]any{
 					{
-						"model":              "celeb",
-						"track":              "celeb_track",
+						"model":              "asr",
+						"track":              "speech_to_text",
 						"percent_completion": 1.0,
 					},
 				},

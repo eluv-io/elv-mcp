@@ -17,9 +17,11 @@ import (
 
 var log = elog.Get("/types")
 
-const defaultFabricApiUrl = "https://main.net955305.contentfabric.io"
-const defaultAITaggerUrl = "https://ai.contentfabric.io/tagging-live"
-const defaultTagstoreUrl = "https://ai.contentfabric.io/tagstore"
+const (
+	defaultFabricApiUrl = "https://main.net955305.contentfabric.io"
+	defaultAITaggerUrl = "https://ai.contentfabric.io/tagging-live"
+	defaultTagstoreUrl = "https://ai.contentfabric.io/tagstore"	
+)
 
 // TenantFabric holds per-tenant fabric credentials and cached tokens.
 type TenantFabric struct {

@@ -197,7 +197,7 @@ func resolveChaptersDependencies(
 	targetModel string,
 ) ([]string, error) {
 
-	deps := ModelDependencies[targetModel]
+	deps := GetModelDependencies(cfg)[targetModel]
 	if len(deps) == 0 {
 		Log.Debug("TagChapters - no dependencies for model", "Model", targetModel)
 		return nil, nil

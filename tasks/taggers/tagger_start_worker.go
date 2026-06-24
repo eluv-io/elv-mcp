@@ -125,8 +125,15 @@ func TagContentWorker(
 			jobs, done, err := pollTaggerStatus(ctx, args.QID, cfg, tf)
 			if err != nil {
 				return runtime.MCPError(err)
-			}
+			}			
 			if done {
+				if (len(jobs) > 0 && jobs[0].Status == "failed") {
+					Log.Debug("Synchronous polling loop completed with failure", "Jobs", jobs)
+					return runtime.MCPError(
+						errors.E("tag_content", errors.K.Internal,
+							"reason", "tagger job failed", "jobs", jobs),
+					)
+				}
 				Log.Debug("Synchronous polling loop completed", "Jobs", jobs)
 				return &mcp.CallToolResult{}, &TagContentSyncResult{Jobs: jobs}, nil
 			}
@@ -229,7 +236,7 @@ func startTaggerJobs(
 	jobs := make([]TagJobSpec, len(args.Jobs))
 	for i, j := range args.Jobs {
 		jobs[i] = j
-		jobs[i].Model = NormalizeModelName(j.Model)
+		jobs[i].Model = NormalizeModelName(cfg,j.Model)
 	}
 
 	reqBody := StartJobsRequest{
@@ -326,6 +333,7 @@ func pollTaggerStatus(
 
 	for i, j := range parsed.Jobs {
 		jobs[i] = TagJobStatus{
+			JobId:				 j.JobID,
 			Model:           j.Model,
 			Status:          j.Status,
 			TimeRunning:     j.TimeRunning,

@@ -58,8 +58,8 @@ type TagContentAsyncResult struct {
 }
 
 // Normalized job status returned to MCP clients.
-// Note: job_id is intentionally not exposed to avoid confusion with MCP task_id.
 type TagJobStatus struct {
+	JobId				string   `json:"job_id"`
 	Model           string   `json:"model"`
 	Status          string   `json:"status"`
 	TimeRunning     float64  `json:"time_running"`
@@ -84,14 +84,13 @@ func (TaggerStartTask) Name() string {
 
 // Description returns the human-readable description of the tool.
 // Built dynamically from the current list of supported models.
-func (TaggerStartTask) Description() string {
-	models := GetSupportedModels()
-	return BuildTagContentDescription(models)
+func (TaggerStartTask) Description() string {	
+	return BuildTagContentDescription()
 }
 
 // BuildTagContentDescription constructs the MCP tool description,
 // including the dynamically generated list of supported models.
-func BuildTagContentDescription(models []string) string {
+func BuildTagContentDescription() string {
 	var b strings.Builder
 
 	b.WriteString("Tag Fabric content using one or more models via the Eluvio Tagger API.\n\n")
@@ -103,7 +102,7 @@ func BuildTagContentDescription(models []string) string {
 	b.WriteString("  • jobs — an array of tagging jobs to run.\n\n")
 
 	// Insert dynamically generated supported model list
-	b.WriteString(DescribeSupportedModels(models))
+	b.WriteString(DescribeSupportedModels(&config.Config{}))
 	b.WriteString("\n")
 
 	b.WriteString("Each job in `jobs` may include:\n")

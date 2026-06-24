@@ -87,7 +87,7 @@ func runTaggerStop(
 	if args.Model == "" {
 		url = fmt.Sprintf("%s/%s/stop?authorization=%s", base, args.QID, token)
 	} else {
-		url = fmt.Sprintf("%s/%s/stop/%s?authorization=%s", base, args.QID, NormalizeModelName(args.Model), token)
+		url = fmt.Sprintf("%s/%s/stop/%s?authorization=%s", base, args.QID, NormalizeModelName(cfg,args.Model), token)
 	}
 
 	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, url, nil)

@@ -24,7 +24,7 @@ http://<host>:<port>/
 
 The `<port>` is defined in `config.yaml`:
 
-``` json
+``` yaml
 server:
   port: 8181
   oauth_issuer: https://auth.example.com
@@ -88,7 +88,7 @@ The server does **not**:
 
 Token validation is performed using the configured issuer:
 
-``` json
+``` yaml
 server:
   oauth_issuer: https://auth.example.com
 ```
@@ -116,7 +116,7 @@ The `sub` claim identifies the authenticated user.
 
 After validating the token, the server extracts the `sub` claim and maps it to a tenant defined in `config.yaml`:
 
-``` json
+``` yaml
 tenants:
   - id: example
     users:

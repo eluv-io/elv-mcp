@@ -181,7 +181,7 @@ func resolveModelDependencies(
 	targetModel string,
 ) ([]string, error) {
 
-	deps := ModelDependencies[targetModel]
+	deps := GetModelDependencies(cfg)[targetModel]
 	if len(deps) == 0 {
 		Log.Debug("TagCharacters - no dependencies for model", "Model", targetModel)
 		return nil, nil

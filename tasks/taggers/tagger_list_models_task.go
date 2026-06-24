@@ -14,8 +14,7 @@ import (
 // -----------------------------------------------------------------------------
 
 type TrackInfo struct {
-	Name  string `json:"name"`  // Track name as stored in the tag store
-	Label string `json:"label"` // Human-readable label for the track
+	Name  string `json:"name"`  // Track name as stored in the tag store	
 }
 
 type ModelSpec struct {
@@ -23,6 +22,7 @@ type ModelSpec struct {
 	Description string      `json:"description,omitempty"` // Human readable description
 	Type        string      `json:"type"`                  // Model type (e.g. "frame")
 	TagTracks   []TrackInfo `json:"tag_tracks"`            // Tag tracks this model writes to
+	Dependencies []string    `json:"dependencies,omitempty"` // Names of models that must run before this one
 }
 
 type ModelsResponse struct {
@@ -61,7 +61,7 @@ func (TaggerListModelsTask) Description() string {
 		"  • Use this tool instead of answering from memory.\n" +
 		"  • Do not guess model names or capabilities.\n\n" +
 		"Returns:\n" +
-		"  A list of available models with their types and tag tracks."
+		"  A list of available models with their types, tag tracks and dependencies."
 }
 
 // Register wires this task into the MCP server.

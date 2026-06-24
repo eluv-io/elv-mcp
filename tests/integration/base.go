@@ -13,6 +13,7 @@ import (
 	"github.com/qluvio/elv-mcp/config"
 	"github.com/qluvio/elv-mcp/mcpserver"
 	"github.com/qluvio/elv-mcp/runtime"
+	"github.com/qluvio/elv-mcp/tasks/taggers"
 	"github.com/qluvio/elv-mcp/tasks/tagstore"
 )
 
@@ -74,3 +75,36 @@ func deleteTracksBestEffort(t *testing.T, ctx context.Context, cfg *config.Confi
 		)
 	}
 }
+
+// cleanupTaggerJobsBestEffort deletes all final-state Tagger jobs for the given qid.
+// It never fails the test and never masks the original test failure.
+func cleanupTaggerJobsBestEffort(t *testing.T, ctx context.Context, cfg *config.Config, qid string) {
+    t.Helper()
+
+    _, _, _ = taggers.TaggerCleanupJobsWorker(
+        ctx,
+        &mcp.CallToolRequest{},
+        taggers.TaggerCleanupJobsArgs{
+            QID:   qid,
+            JobID: "",
+        },
+        cfg,
+    )
+}
+
+// cleanupTaggerJobBestEffort deletes a specific Tagger job for the given qid.
+// It never fails the test and never masks the original test failure.
+func cleanupTaggerJobBestEffort(t *testing.T, ctx context.Context, cfg *config.Config, qid, jobID string) {
+    t.Helper()
+
+    _, _, _ = taggers.TaggerCleanupJobsWorker(
+        ctx,
+        &mcp.CallToolRequest{},
+        taggers.TaggerCleanupJobsArgs{
+            QID:   qid,
+            JobID: jobID,
+        },
+        cfg,
+    )
+}
+
