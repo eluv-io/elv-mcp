@@ -382,7 +382,6 @@ High‑level workflow for chapter tagging with dependency resolution.
 
 ---
 
-
 ## 3.4 `list_models`
 
 List available Tagger models.
@@ -417,7 +416,7 @@ List available Tagger models.
 
 ---
 
-# **3.5 `tagger_cleanup_jobs`**
+## 3.5 `tagger_cleanup_jobs`
 
 Delete Tagger jobs for a Fabric content object.
 
