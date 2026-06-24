@@ -27,6 +27,13 @@ This repository contains:
 - **`tag_chapters`** — High‑level chapter tagging workflow with dependency resolution  
 - **`tag_characters`** — High‑level character tagging workflow with dependency resolution  
 - **`list_models`** — List available Tagger models and their tag tracks  
+- **`stop_tagging`** — Stop one or more running Tagger jobs for a content object  
+- **`tag_status`** — Retrieve tagging progress, job summaries, and detailed model status  
+
+### TagStore Management
+- **`tagstore_create_track`** — Create a new TagStore track for a Fabric content object  
+- **`tagstore_delete_track`** — Delete a TagStore track and all associated batches/tags  
+- **`tagstore_list_tracks`** — List all TagStore tracks and their metadata for a content object  
 
 ### Async Task Management
 - **`task_status`** — Query the status or final result of an asynchronous task  
