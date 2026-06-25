@@ -10,13 +10,13 @@ import (
 	mcpauth "github.com/modelcontextprotocol/go-sdk/auth"
 
 	elvauth "github.com/qluvio/elv-mcp/auth"
-	"github.com/qluvio/elv-mcp/types"
+	"github.com/qluvio/elv-mcp/config"
 )
 
 // NewTokenVerifier returns an mcpauth.TokenVerifier that validates incoming
 // bearer tokens as JWTs signed by the configured OAuth issuer. The issuer's
 // JWKS is fetched and cached automatically.
-func NewTokenVerifier(cfg *types.Config) mcpauth.TokenVerifier {
+func NewTokenVerifier(cfg *config.Config) mcpauth.TokenVerifier {
 	verifier := elvauth.NewJWKSVerifier(cfg.OAuthIssuer)
 
 	return func(ctx context.Context, tokenStr string, req *http.Request) (*mcpauth.TokenInfo, error) {

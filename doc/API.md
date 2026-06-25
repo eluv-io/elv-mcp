@@ -15,9 +15,9 @@
 |-----------------|---------|------|
 | `initialize` | MCP SDK built-in | None (open) |
 | `notifications/initialized` | MCP SDK built-in | None (open) |
-| `tools/list` | MCP SDK built-in (returns tool schemas) | OAuth Bearer required |
-| `tools/call` -> `search_clips` | `SearchClips()` | OAuth Bearer required |
-| `tools/call` -> `refresh_clips` | `RefreshToken()` | None (open) |
+| `tools/list` | MCP SDK built-in (returns tool schemas) | OAuth2 Bearer required |
+| `tools/call` -> `search_clips` | `SearchClips()` | OAuth2 Bearer required |
+| `tools/call` -> `refresh_clips` | `RefreshToken()` | OAuth2 Bearer required |
 
 ## Middleware Stack (on `/`)
 
@@ -25,13 +25,7 @@
 loggingMiddleware -> recoverMiddleware -> selectiveAuthMiddleware -> StreamableHTTPHandler
 ```
 
-The `selectiveAuthMiddleware` peeks at the JSON-RPC `method` (and `params.name`) fields in POST bodies.
-The following pass through unauthenticated:
-- `initialize`
-- `notifications/initialized`
-- `tools/call` with `params.name == "refresh_clips"`
-
-All other methods require a valid `Authorization: Bearer <token>` header.
+All POST methods require a valid `Authorization: Bearer <token>` header. GET and DELETE pass through unauthenticated (SSE stream and session teardown).
 
 On 401 failure, the response includes:
 
@@ -39,7 +33,7 @@ On 401 failure, the response includes:
 WWW-Authenticate: Bearer resource_metadata=<RESOURCE_URL>/.well-known/oauth-protected-resource
 ```
 
-This directs the client to the discovery endpoint to find the OAuth authorization server.
+This directs the client to the discovery endpoint to find the OAuth2 authorization server.
 
 ## Localhost Protection
 

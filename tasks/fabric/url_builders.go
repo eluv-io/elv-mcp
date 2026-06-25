@@ -1,16 +1,17 @@
-package builder
+package fabric
 
 import (
 	"fmt"
 	"net/url"
 	"strings"
 
-	"github.com/qluvio/elv-mcp/types"
+	elog "github.com/eluv-io/log-go"
+	"github.com/qluvio/elv-mcp/config"
 )
 
 // BuildNodeThumbURL builds: {baseURL}/t/{token}{imageURL}
 // imageURL is expected to start with /q/ as returned by the search API.
-func BuildNodeThumbURL(imageURL, token string, cfg *types.Config) string {
+func BuildNodeThumbURL(imageURL, token string, cfg *config.Config) string {
 	if imageURL == "" {
 		return ""
 	}
@@ -27,8 +28,10 @@ func BuildNodeThumbURL(imageURL, token string, cfg *types.Config) string {
 	return base + "/t/" + token + path
 }
 
-// BuildSearchURL constructs the search Index API URL using config and args.
-func BuildSearchURL(cfg *types.Config, args types.SearchClipsArgs, token string) (string, error) {
+// BuildSearchURL constructs the search Index API URL using config, tenant fabric, and args.
+func BuildSearchURL(cfg *config.Config, tf *config.TenantFabric, args SearchClipsArgs, token string) (string, error) {
+	elog.Debug("MCP Search request with args: %+v", args)
+
 	if strings.TrimSpace(args.Terms) == "" {
 		return "", fmt.Errorf("terms cannot be empty")
 	}
@@ -36,8 +39,8 @@ func BuildSearchURL(cfg *types.Config, args types.SearchClipsArgs, token string)
 	u, err := url.Parse(fmt.Sprintf(
 		"%s/search/qlibs/%s/q/%s/rep/search",
 		cfg.SearchIdxUrl,
-		url.PathEscape(cfg.QLibIndexID),
-		url.PathEscape(cfg.QIndexID),
+		url.PathEscape(tf.QLibIndexID),
+		url.PathEscape(tf.QIndexID),
 	))
 	if err != nil {
 		return "", err
@@ -79,12 +82,12 @@ func BuildSearchURL(cfg *types.Config, args types.SearchClipsArgs, token string)
 		q.Set("max_total", "100")
 	}
 
-	clips := types.BoolOrDefault(args.Clips, true)
+	clips := config.BoolOrDefault(args.Clips, true)
 	if clips {
 		q.Set("clips", "true")
 	}
 
-	includeTags := types.BoolOrDefault(args.ClipsIncludeSourceTags, true)
+	includeTags := config.BoolOrDefault(args.ClipsIncludeSourceTags, true)
 	if includeTags {
 		q.Set("clips_include_source_tags", "true")
 	}
@@ -103,7 +106,7 @@ func BuildSearchURL(cfg *types.Config, args types.SearchClipsArgs, token string)
 }
 
 // BuildVideoURL builds the final clip URL with start/end and auth.
-func BuildVideoURL(videoURL, token, start, end string, cfg *types.Config) string {
+func BuildVideoURL(videoURL, token, start, end string, cfg *config.Config) string {
 	hash := extractHash(videoURL)
 	if hash == "" {
 		// If we can't find a hash, return the original URL unchanged
@@ -149,6 +152,37 @@ func BuildVideoURL(videoURL, token, start, end string, cfg *types.Config) string
 	u.RawQuery = "" // ensure we fully control the query string
 	return u.String() + b.String()
 }
+
+// BuildPublicMetaURL constructs the Fabric struct API URL for retrieving
+// public user metadata for a given content object.
+func BuildPublicMetaURL(cfg *config.Config, contentID, token string) (string, error) {
+    if strings.TrimSpace(contentID) == "" {
+        return "", fmt.Errorf("content_id cannot be empty")
+    }
+
+    base := strings.TrimRight(cfg.ApiUrl, "/")
+
+    u, err := url.Parse(fmt.Sprintf(
+        "%s/q/%s/struct/meta/user/public",
+        base,
+        url.PathEscape(contentID),
+    ))
+    if err != nil {
+        return "", err
+    }
+
+    // Optional query parameters
+    q := u.Query()
+
+    // Some gateways accept token via query as well as header
+    if strings.TrimSpace(token) != "" {
+        q.Set("authorization", token)
+    }
+
+    u.RawQuery = q.Encode()
+    return u.String(), nil
+}
+
 
 // extractHash tries to pull the content hash (hq__ or iq__) out of the URL.
 func extractHash(videoURL string) string {

@@ -5,31 +5,24 @@ import (
 
 	elog "github.com/eluv-io/log-go"
 
-	"github.com/qluvio/elv-mcp/auth"
+	"github.com/qluvio/elv-mcp/config"
 	"github.com/qluvio/elv-mcp/mcpserver"
-	"github.com/qluvio/elv-mcp/types"
+	_ "github.com/qluvio/elv-mcp/tasks/all"
 )
 
 var log = elog.Get("/main")
 
 func main() {
-	cfg, err := types.LoadConfig()
+	cfg, err := config.LoadConfig()
 	if err != nil {
 		log.Fatal("failed to load config", err)
 	}
-	// Creating StateChannel token
-	stateToken, err := auth.FetchStateChannel(cfg, "")
-	if err != nil {
-		log.Fatal("failed to fetch state token", err)
-	}
-	cfg.SCToken = stateToken
-	log.Info("state token fetched", "token", stateToken)
 
 	server := mcpserver.NewServer(cfg)
 	mux := mcpserver.NewHTTPMux(server, cfg)
 
 	addr := ":8181"
-	log.Info("MCP server listening", "addr", "http://localhost"+addr+"/mcp")
+	log.Info("MCP server listening", "addr", "http://localhost"+addr)
 	if err := http.ListenAndServe(addr, mux); err != nil {
 		log.Fatal("http server failed", err)
 	}
